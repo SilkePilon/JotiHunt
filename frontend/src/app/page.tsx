@@ -32,6 +32,7 @@ import { LayersControl, LayerGroup, Popup } from "react-leaflet";
 import dynamic from "next/dynamic";
 const MapWithNoSSR = dynamic(() => import("@/components/map"), {
   ssr: false,
+  loading: () => <p>Loading map...</p>,
 });
 import "leaflet/dist/leaflet.css";
 import {
@@ -41,6 +42,11 @@ import {
 } from "@/components/ui/popover";
 
 export default function PlaygroundPage() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const THUNDERFOREST_API_KEY = "130d9bc1e10a476c9db594341f4d5579";
   const [initialPosition, setInitialPosition] = useState<[number, number]>([
     52.2129919, 5.2793703,
@@ -201,7 +207,7 @@ export default function PlaygroundPage() {
                       <Markers />
                       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                     </MapContainer> */}
-                    <MapWithNoSSR />
+                    {isMounted && <MapWithNoSSR />}
                     <div className="flex items-center space-x-2">
                       <Button>Submit</Button>
                       <Button variant="secondary">
