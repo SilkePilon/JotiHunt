@@ -29,7 +29,10 @@ import { presets } from "./data/presets";
 import { ModeToggle } from "@/components/mode-toggle";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import { LayersControl, LayerGroup, Popup } from "react-leaflet";
-import JotiHuntMap from "@/components/map";
+import dynamic from "next/dynamic";
+const MapWithNoSSR = dynamic(() => import("@/components/map"), {
+  ssr: false,
+});
 import "leaflet/dist/leaflet.css";
 import {
   Popover,
@@ -196,7 +199,7 @@ export default function PlaygroundPage() {
                       <Markers />
                       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                     </MapContainer> */}
-                    <JotiHuntMap />
+                    <MapWithNoSSR />
                     <div className="flex items-center space-x-2">
                       <Button>Submit</Button>
                       <Button variant="secondary">
