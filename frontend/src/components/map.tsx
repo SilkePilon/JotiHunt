@@ -1,34 +1,16 @@
+// components/Map.js
 "use client";
 import React, { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
+import {
+  MapContainer,
+  TileLayer,
+  LayersControl,
+  Circle,
+  Popup,
+} from "react-leaflet";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-
-// Dynamically import MapContainer and other Leaflet components
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const LayersControl = dynamic(
-  () => import("react-leaflet").then((mod) => mod.LayersControl),
-  { ssr: false }
-);
-const Circle = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Circle),
-  { ssr: false }
-);
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
-  ssr: false,
-});
-
-// Only import Leaflet CSS on the client-side
-if (typeof window !== "undefined") {
-  require("leaflet/dist/leaflet.css");
-}
+import "leaflet/dist/leaflet.css";
 
 const Map = ({ initialPosition }) => {
   const [groups, setGroups] = useState([]);
@@ -42,23 +24,19 @@ const Map = ({ initialPosition }) => {
   const centerOfNetherlands = [52.2858356, 5.6549385899207];
 
   const fetchAllLocations = () => {
-    if (typeof window !== "undefined") {
-      fetch("http://192.168.2.14:5000/api/get-locations")
-        .then((response) => response.json())
-        .then((data) => {
-          setGroups(
-            Object.entries(data).map(([name, location]) => ({
-              name,
-              latitude: parseFloat(location.latitude),
-              longitude: parseFloat(location.longitude),
-              description: location.description || "",
-            }))
-          );
-        })
-        .catch((error) =>
-          console.error("Error fetching user locations:", error)
+    fetch("http://192.168.2.14:5000/api/get-locations")
+      .then((response) => response.json())
+      .then((data) => {
+        setGroups(
+          Object.entries(data).map(([name, location]) => ({
+            name,
+            latitude: parseFloat(location.latitude),
+            longitude: parseFloat(location.longitude),
+            description: location.description || "",
+          }))
         );
-    }
+      })
+      .catch((error) => console.error("Error fetching user locations:", error));
   };
 
   useEffect(() => {
@@ -68,18 +46,14 @@ const Map = ({ initialPosition }) => {
   }, [isUserNameSubmitted]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      fetch("https://jotihunt.nl/api/2.0/subscriptions")
-        .then((response) => response.json())
-        .then((data) => setJotihuntGroups(data.data))
-        .catch((error) =>
-          console.error("Error fetching Jotihunt data:", error)
-        );
-    }
+    fetch("https://jotihunt.nl/api/2.0/subscriptions")
+      .then((response) => response.json())
+      .then((data) => setJotihuntGroups(data.data))
+      .catch((error) => console.error("Error fetching Jotihunt data:", error));
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "geolocation" in navigator) {
+    if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -128,74 +102,72 @@ const Map = ({ initialPosition }) => {
 
   return (
     <div>
-      {typeof window !== "undefined" && (
-        <MapContainer
-          center={centerOfNetherlands}
-          zoom={10}
-          style={{ height: "80vh", width: "100%", borderRadius: "0.75rem" }}
-        >
-          <LayersControl position="topright">
-            <LayersControl.BaseLayer checked name="OpenStreetMap">
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-            </LayersControl.BaseLayer>
-            <LayersControl.Overlay name="Bike Lanes">
-              <TileLayer
-                url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
-                attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-            </LayersControl.Overlay>
-            <LayersControl.Overlay name="Walking Paths">
-              <TileLayer
-                url={`https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
-                attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-            </LayersControl.Overlay>
-          </LayersControl>
+      <MapContainer
+        center={centerOfNetherlands}
+        zoom={10}
+        style={{ height: "80vh", width: "100%", borderRadius: "0.75rem" }}
+      >
+        <LayersControl position="topright">
+          <LayersControl.BaseLayer checked name="OpenStreetMap">
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.Overlay name="Bike Lanes">
+            <TileLayer
+              url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
+              attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+          </LayersControl.Overlay>
+          <LayersControl.Overlay name="Walking Paths">
+            <TileLayer
+              url={`https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
+              attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+          </LayersControl.Overlay>
+        </LayersControl>
 
-          {groups.map((group, index) => (
-            <Circle
-              key={index}
-              center={[group.latitude, group.longitude]}
-              radius={300}
-              pathOptions={{ fillColor: getRandomColor(), color: "black" }}
-              eventHandlers={{
-                click: () => setSelectedGroup(group),
-              }}
-            >
-              <Popup className="request-popup">
-                <p>Name: {group.name}</p>
-                <p>Description: {group.description}</p>
-                <p>Latitude: {group.latitude}</p>
-                <p>Longitude: {group.longitude}</p>
-              </Popup>
-            </Circle>
-          ))}
+        {groups.map((group, index) => (
+          <Circle
+            key={index}
+            center={[group.latitude, group.longitude]}
+            radius={300}
+            pathOptions={{ fillColor: getRandomColor(), color: "black" }}
+            eventHandlers={{
+              click: () => setSelectedGroup(group),
+            }}
+          >
+            <Popup className="request-popup">
+              <p>Name: {group.name}</p>
+              <p>Description: {group.description}</p>
+              <p>Latitude: {group.latitude}</p>
+              <p>Longitude: {group.longitude}</p>
+            </Popup>
+          </Circle>
+        ))}
 
-          {jotihuntGroups.map((group, index) => (
-            <Circle
-              key={index}
-              center={[parseFloat(group.lat), parseFloat(group.long)]}
-              radius={1000}
-              pathOptions={{ fillColor: getRandomColor(), color: "blue" }}
-            >
-              <Popup className="request-popup">
-                <p>Name: {group.name}</p>
-                <p>Accommodation: {group.accomodation}</p>
-                <p>
-                  Address: {group.street} {group.housenumber}
-                  {group.housenumber_addition}
-                </p>
-                <p>
-                  {group.postcode} {group.city}
-                </p>
-              </Popup>
-            </Circle>
-          ))}
-        </MapContainer>
-      )}
+        {jotihuntGroups.map((group, index) => (
+          <Circle
+            key={index}
+            center={[parseFloat(group.lat), parseFloat(group.long)]}
+            radius={1000}
+            pathOptions={{ fillColor: getRandomColor(), color: "blue" }}
+          >
+            <Popup className="request-popup">
+              <p>Name: {group.name}</p>
+              <p>Accommodation: {group.accomodation}</p>
+              <p>
+                Address: {group.street} {group.housenumber}
+                {group.housenumber_addition}
+              </p>
+              <p>
+                {group.postcode} {group.city}
+              </p>
+            </Popup>
+          </Circle>
+        ))}
+      </MapContainer>
 
       {selectedGroup && (
         <Card className="absolute top-4 right-4 z-[1000] w-64">
