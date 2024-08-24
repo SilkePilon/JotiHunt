@@ -1,74 +1,85 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  LayersControl,
-  Circle,
-  Popup,
-} from "react-leaflet";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import "leaflet/dist/leaflet.css";
 
-import { Component } from "react";
-import L from "react-leaflet";
-import { Marker } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+// Dynamically import MapContainer and other Leaflet components
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const LayersControl = dynamic(
+  () => import("react-leaflet").then((mod) => mod.LayersControl),
+  { ssr: false }
+);
+const Circle = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Circle),
+  { ssr: false }
+);
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
+  ssr: false,
+});
 
-interface MapProps {
-  initialPosition: [number, number];
+// Only import Leaflet CSS on the client-side
+if (typeof window !== "undefined") {
+  require("leaflet/dist/leaflet.css");
 }
 
-const Map: React.FC<MapProps> = ({ initialPosition }) => {
-  const [groups, setGroups] = useState([]); // State for user locations
-  const [jotihuntGroups, setJotihuntGroups] = useState([]); // State for Jotihunt locations
-  const [selectedGroup, setSelectedGroup] = useState(null); // State for selected group details
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(
-    null
-  ); // User's current location
-  const [userName, setUserName] = useState(""); // User's name
-  const [isUserNameSubmitted, setIsUserNameSubmitted] = useState(false); // Username submission state
-  const [inputName, setInputName] = useState(""); // Input field value state
+const Map = ({ initialPosition }) => {
+  const [groups, setGroups] = useState([]);
+  const [jotihuntGroups, setJotihuntGroups] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [userName, setUserName] = useState("");
+  const [isUserNameSubmitted, setIsUserNameSubmitted] = useState(false);
+  const [inputName, setInputName] = useState("");
 
-  const centerOfNetherlands = [52.2858356, 5.6549385899207]; // Default map center position
+  const centerOfNetherlands = [52.2858356, 5.6549385899207];
 
-  // Function to fetch all users' locations
   const fetchAllLocations = () => {
-    fetch("http://192.168.2.14:5000/api/get-locations")
-      .then((response) => response.json())
-      .then((data) => {
-        setGroups(
-          Object.entries(data).map(([name, location]) => ({
-            name,
-            latitude: parseFloat(location.latitude),
-            longitude: parseFloat(location.longitude),
-            description: location.description || "", // Include description
-          }))
+    if (typeof window !== "undefined") {
+      fetch("http://192.168.2.14:5000/api/get-locations")
+        .then((response) => response.json())
+        .then((data) => {
+          setGroups(
+            Object.entries(data).map(([name, location]) => ({
+              name,
+              latitude: parseFloat(location.latitude),
+              longitude: parseFloat(location.longitude),
+              description: location.description || "",
+            }))
+          );
+        })
+        .catch((error) =>
+          console.error("Error fetching user locations:", error)
         );
-      })
-      .catch((error) => console.error("Error fetching user locations:", error));
+    }
   };
 
-  // Fetch user locations initially and every 2 minutes
   useEffect(() => {
-    fetchAllLocations(); // Initial fetch
-    const interval = setInterval(fetchAllLocations, 120000); // Fetch every 2 minutes
-
-    return () => clearInterval(interval); // Clean up interval on component unmount
+    fetchAllLocations();
+    const interval = setInterval(fetchAllLocations, 120000);
+    return () => clearInterval(interval);
   }, [isUserNameSubmitted]);
 
-  // Fetch Jotihunt groups' locations
   useEffect(() => {
-    fetch("https://jotihunt.nl/api/2.0/subscriptions")
-      .then((response) => response.json())
-      .then((data) => setJotihuntGroups(data.data))
-      .catch((error) => console.error("Error fetching Jotihunt data:", error));
+    if (typeof window !== "undefined") {
+      fetch("https://jotihunt.nl/api/2.0/subscriptions")
+        .then((response) => response.json())
+        .then((data) => setJotihuntGroups(data.data))
+        .catch((error) =>
+          console.error("Error fetching Jotihunt data:", error)
+        );
+    }
   }, []);
 
-  // Fetch user's current location using Geolocation API
   useEffect(() => {
-    if ("geolocation" in navigator) {
+    if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -81,7 +92,6 @@ const Map: React.FC<MapProps> = ({ initialPosition }) => {
     }
   }, []);
 
-  // Handle form submission to save user's location and name
   const handleNameSubmit = (e) => {
     e.preventDefault();
     if (userName && userLocation) {
@@ -99,13 +109,12 @@ const Map: React.FC<MapProps> = ({ initialPosition }) => {
         .then((response) => response.json())
         .then((data) => {
           console.log(data);
-          setIsUserNameSubmitted(true); // Hide the username input popup after submission
+          setIsUserNameSubmitted(true);
         })
         .catch((error) => console.error("Error saving location:", error));
     }
   };
 
-  // Function to generate random color for each user's marker
   const getRandomColor = () => {
     const letters = "0123456789ABCDEF";
     let color = "#";
@@ -119,109 +128,85 @@ const Map: React.FC<MapProps> = ({ initialPosition }) => {
 
   return (
     <div>
-      {/* Show the username input form only if the username hasn't been submitted yet */}
-      {/* {!isUserNameSubmitted && (
-        <Card className="absolute z-[1000] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 rounded">
-          <CardHeader>Enter your name</CardHeader>
+      {typeof window !== "undefined" && (
+        <MapContainer
+          center={centerOfNetherlands}
+          zoom={10}
+          style={{ height: "80vh", width: "100%", borderRadius: "0.75rem" }}
+        >
+          <LayersControl position="topright">
+            <LayersControl.BaseLayer checked name="OpenStreetMap">
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.Overlay name="Bike Lanes">
+              <TileLayer
+                url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
+                attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+            </LayersControl.Overlay>
+            <LayersControl.Overlay name="Walking Paths">
+              <TileLayer
+                url={`https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
+                attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+            </LayersControl.Overlay>
+          </LayersControl>
+
+          {groups.map((group, index) => (
+            <Circle
+              key={index}
+              center={[group.latitude, group.longitude]}
+              radius={300}
+              pathOptions={{ fillColor: getRandomColor(), color: "black" }}
+              eventHandlers={{
+                click: () => setSelectedGroup(group),
+              }}
+            >
+              <Popup className="request-popup">
+                <p>Name: {group.name}</p>
+                <p>Description: {group.description}</p>
+                <p>Latitude: {group.latitude}</p>
+                <p>Longitude: {group.longitude}</p>
+              </Popup>
+            </Circle>
+          ))}
+
+          {jotihuntGroups.map((group, index) => (
+            <Circle
+              key={index}
+              center={[parseFloat(group.lat), parseFloat(group.long)]}
+              radius={1000}
+              pathOptions={{ fillColor: getRandomColor(), color: "blue" }}
+            >
+              <Popup className="request-popup">
+                <p>Name: {group.name}</p>
+                <p>Accommodation: {group.accomodation}</p>
+                <p>
+                  Address: {group.street} {group.housenumber}
+                  {group.housenumber_addition}
+                </p>
+                <p>
+                  {group.postcode} {group.city}
+                </p>
+              </Popup>
+            </Circle>
+          ))}
+        </MapContainer>
+      )}
+
+      {selectedGroup && (
+        <Card className="absolute top-4 right-4 z-[1000] w-64">
+          <CardHeader>{selectedGroup.name}</CardHeader>
           <CardContent>
-            <form onSubmit={handleNameSubmit}>
-              <label>
-                Enter your name:
-                <input
-                  type="text"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="border rounded p-1 ml-2"
-                />
-              </label>
-              <Button type="submit" className="ml-2">
-                Submit
-              </Button>
-            </form>
+            <p>Latitude: {selectedGroup.latitude}</p>
+            <p>Longitude: {selectedGroup.longitude}</p>
+            <Button onClick={() => setSelectedGroup(null)}>Close</Button>
           </CardContent>
         </Card>
-      )} */}
-
-      <MapContainer
-        center={centerOfNetherlands}
-        zoom={10}
-        style={{ height: "80vh", width: "100%", borderRadius: "0.75rem" }}
-      >
-        <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="OpenStreetMap">
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.Overlay name="Bike Lanes">
-            <TileLayer
-              url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
-              attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-          </LayersControl.Overlay>
-          <LayersControl.Overlay name="Walking Paths">
-            <TileLayer
-              url={`https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
-              attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-          </LayersControl.Overlay>
-        </LayersControl>
-
-        {/* Display user locations */}
-        {groups.map((group, index) => (
-          <Circle
-            key={index}
-            center={[group.latitude, group.longitude]}
-            radius={300}
-            pathOptions={{ fillColor: getRandomColor(), color: "black" }}
-            eventHandlers={{
-              click: () => setSelectedGroup(group),
-            }}
-          >
-            <Popup className="request-popup">
-              <p>Name: {group.name}</p>
-              <p>Description: {group.description}</p>
-              <p>Latitude: {group.latitude}</p>
-              <p>Longitude: {group.longitude}</p>
-            </Popup>
-          </Circle>
-        ))}
-
-        {/* Display Jotihunt locations */}
-        {jotihuntGroups.map((group, index) => (
-          <Circle
-            key={index}
-            center={[parseFloat(group.lat), parseFloat(group.long)]}
-            radius={1000}
-            pathOptions={{ fillColor: getRandomColor(), color: "blue" }}
-          >
-            <Popup className="request-popup">
-              <p>Name: {group.name}</p>
-              <p>Accommodation: {group.accomodation}</p>
-              <p>
-                Address: {group.street} {group.housenumber}
-                {group.housenumber_addition}
-              </p>
-              <p>
-                {group.postcode} {group.city}
-              </p>
-            </Popup>
-          </Circle>
-        ))}
-
-        {/* Show selected group's detailed information */}
-        {selectedGroup && (
-          <Card className="absolute top-4 right-4 z-[1000] w-64">
-            <CardHeader>{selectedGroup.name}</CardHeader>
-            <CardContent>
-              <p>Latitude: {selectedGroup.latitude}</p>
-              <p>Longitude: {selectedGroup.longitude}</p>
-              <Button onClick={() => setSelectedGroup(null)}>Close</Button>
-            </CardContent>
-          </Card>
-        )}
-      </MapContainer>
+      )}
     </div>
   );
 };
