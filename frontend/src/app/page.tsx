@@ -50,10 +50,12 @@ export default function PlaygroundPage() {
   ]);
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { latitude, longitude } = position.coords;
-      setInitialPosition([latitude, longitude]);
-    });
+    if (typeof window !== "undefined") {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const { latitude, longitude } = position.coords;
+        setInitialPosition([latitude, longitude]);
+      });
+    }
   }, []);
 
   const MapEvents = () => {
