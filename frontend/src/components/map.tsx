@@ -17,10 +17,13 @@ const JotiHuntMap = () => {
   const centerOfNetherlands = [52.2858356, 5.6549385899207];
 
   useEffect(() => {
-    fetch("https://jotihunt.nl/api/2.0/subscriptions")
-      .then((response) => response.json())
-      .then((data) => setGroups(data.data))
-      .catch((error) => console.error("Error fetching data:", error));
+    // Check if window is defined (client-side)
+    if (typeof window !== "undefined") {
+      fetch("https://jotihunt.nl/api/2.0/subscriptions")
+        .then((response) => response.json())
+        .then((data) => setGroups(data.data))
+        .catch((error) => console.error("Error fetching data:", error));
+    }
   }, []);
 
   const getRandomColor = () => {
