@@ -10,8 +10,14 @@ import {
 } from "react-leaflet";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
-const JotiHuntMap = () => {
+interface MapProps {
+  initialPosition: [number, number];
+}
+
+const Map: React.FC<MapProps> = ({ initialPosition }) => {
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const centerOfNetherlands = [52.2858356, 5.6549385899207];
