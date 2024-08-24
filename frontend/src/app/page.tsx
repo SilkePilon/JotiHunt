@@ -30,6 +30,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import { LayersControl, LayerGroup, Popup } from "react-leaflet";
 import dynamic from "next/dynamic";
+
 const MapWithNoSSR = dynamic(() => import("@/components/map"), {
   ssr: false,
   loading: () => <p>Loading map...</p>,
@@ -96,7 +97,11 @@ export default function PlaygroundPage() {
             JotiHunt Map
           </h2>
           <ModeToggle></ModeToggle>
-          <div className="ml-auto flex w-full space-x-2 sm:justify-end">
+
+          <div
+            style={{ paddingLeft: "10px" }}
+            className="ml-auto flex w-full space-x-2 sm:justify-end"
+          >
             <PresetSelector presets={presets} />
             <PresetSave />
             <div className="hidden space-x-2 md:flex">
@@ -183,6 +188,43 @@ export default function PlaygroundPage() {
                 <TemperatureSelector defaultValue={[0.56]} />
                 <MaxLengthSelector defaultValue={[256]} />
                 <TopPSelector defaultValue={[0.9]} />
+                <Separator style={{ height: "2px" }} />
+                <Button
+                  style={{ backgroundColor: "#ff6961" }}
+                  variant={"outline"}
+                >
+                  Alpha
+                </Button>
+                <Button
+                  style={{ backgroundColor: "#ff6961" }}
+                  variant={"outline"}
+                >
+                  Bravo
+                </Button>
+                <Button
+                  style={{ backgroundColor: "#ff6961" }}
+                  variant={"outline"}
+                >
+                  Charlie
+                </Button>
+                <Button
+                  style={{ backgroundColor: "#ff6961" }}
+                  variant={"outline"}
+                >
+                  Delta
+                </Button>
+                <Button
+                  style={{ backgroundColor: "#ff6961" }}
+                  variant={"outline"}
+                >
+                  Echo
+                </Button>
+                <Button
+                  style={{ backgroundColor: "#ff6961" }}
+                  variant={"outline"}
+                >
+                  Foxtrot
+                </Button>
               </div>
               <div className="md:order-1">
                 <TabsContent value="complete" className="mt-0 border-0 p-0">
@@ -224,38 +266,7 @@ export default function PlaygroundPage() {
                         placeholder="We're writing to [inset]. Congrats from OpenAI!"
                         className="h-full min-h-[300px] lg:min-h-[700px] xl:min-h-[700px]"
                       /> */}
-                      <MapContainer
-                        center={initialPosition}
-                        zoom={13}
-                        className=""
-                        style={{ borderRadius: "0.75rem", height: "80vh" }}
-                      >
-                        <Markers />
-                        <LayersControl position="topright">
-                          <LayersControl.BaseLayer checked name="OpenStreetMap">
-                            <TileLayer
-                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            />
-                          </LayersControl.BaseLayer>
-                          <LayersControl.Overlay name="Bike Lanes">
-                            <TileLayer
-                              url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
-                              attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            />
-                          </LayersControl.Overlay>
-                          <LayersControl.Overlay name="Walking Paths">
-                            <TileLayer
-                              url={`https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=${THUNDERFOREST_API_KEY}`}
-                              attribution='&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            />
-                          </LayersControl.Overlay>
-                        </LayersControl>
-                        <MapEvents />
-                        {selectedPosition && (
-                          <Marker position={selectedPosition} />
-                        )}
-                      </MapContainer>
+                      {isMounted && <MapWithNoSSR />}
                       <div className="rounded-md border bg-muted"></div>
                     </div>
                     <div className="flex items-center space-x-2">
