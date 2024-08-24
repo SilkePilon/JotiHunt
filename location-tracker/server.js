@@ -14,11 +14,9 @@ let userLocations = {};
 app.post("/api/save-location", (req, res) => {
   const { name, description, latitude, longitude } = req.body;
   if (!name || !description || !latitude || !longitude) {
-    return res
-      .status(400)
-      .json({
-        error: "Name, description, latitude, and longitude are required.",
-      });
+    return res.status(400).json({
+      error: "Name, description, latitude, and longitude are required.",
+    });
   }
 
   userLocations[name] = { description, latitude, longitude };
@@ -44,5 +42,5 @@ app.get("/api/get-location/:name", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on https://localhost:${PORT}`);
 });

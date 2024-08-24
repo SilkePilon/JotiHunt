@@ -24,7 +24,7 @@ const Map = ({ initialPosition }) => {
   const centerOfNetherlands = [52.2858356, 5.6549385899207];
 
   const fetchAllLocations = () => {
-    fetch("http://192.168.2.14:5000/api/get-locations")
+    fetch("https://192.168.2.14:5000/api/get-locations")
       .then((response) => response.json())
       .then((data) => {
         setGroups(
@@ -69,7 +69,7 @@ const Map = ({ initialPosition }) => {
   const handleNameSubmit = (e) => {
     e.preventDefault();
     if (userName && userLocation) {
-      fetch("http://192.168.2.14:5000/api/save-location", {
+      fetch("https://192.168.2.14:5000/api/save-location", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

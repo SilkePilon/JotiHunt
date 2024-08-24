@@ -39,7 +39,7 @@ export function PresetSave() {
           const { latitude, longitude } = position.coords;
           try {
             const response = await fetch(
-              "http://192.168.2.14:5000/api/save-location",
+              "https://192.168.2.14:5000/api/save-location",
               {
                 method: "POST",
                 headers: {
