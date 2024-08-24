@@ -43,47 +43,7 @@ export default function PlaygroundPage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  const THUNDERFOREST_API_KEY = "130d9bc1e10a476c9db594341f4d5579";
-  const [initialPosition, setInitialPosition] = useState<[number, number]>([
-    52.2129919, 5.2793703,
-  ]);
-  const [selectedPosition, setSelectedPosition] = useState<[number, number]>([
-    0, 0,
-  ]);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const { latitude, longitude } = position.coords;
-        setInitialPosition([latitude, longitude]);
-      });
-    }
-  }, []);
-
-  const MapEvents = () => {
-    useMapEvents({
-      click(e) {
-        setSelectedPosition([e.latlng.lat, e.latlng.lng]);
-      },
-    });
-    return null;
-  };
-
-  const Markers = () => {
-    const map = useMapEvents({
-      click(e) {
-        setSelectedPosition([e.latlng.lat, e.latlng.lng]);
-      },
-    });
-
-    return selectedPosition ? (
-      <Marker
-        key={selectedPosition[0]}
-        position={selectedPosition}
-        interactive={true}
-      ></Marker>
-    ) : null;
-  };
   return (
     <>
       <div className="h-full flex-col md:flex">
