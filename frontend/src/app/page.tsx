@@ -28,9 +28,10 @@ import dynamic from "next/dynamic";
 import { useMediaQuery } from "usehooks-ts";
 import AreaStatusButtons from "@/components/AreaStatusButtons"; // Import the new component
 import { FaGlobeAmericas } from "react-icons/fa";
-import { FaCarSide } from "react-icons/fa";
 import { IoChatbox } from "react-icons/io5";
 import { RiSettings3Fill } from "react-icons/ri";
+import { AiFillNotification } from "react-icons/ai";
+import NewsCardList from "@/components/cardlist";
 import {
   Drawer,
   DrawerClose,
@@ -41,7 +42,10 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { ChartContainer } from "@/components/ui/chart";
 const MapWithNoSSR = dynamic(() => import("@/components/map"), {
   ssr: false,
   loading: () => <p>Loading map...</p>,
@@ -92,7 +96,7 @@ export default function PlaygroundPage() {
                     <HoverCard openDelay={200}>
                       <HoverCardTrigger asChild>
                         <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          Mode
+                          Select Page
                         </span>
                       </HoverCardTrigger>
                       <HoverCardContent
@@ -112,7 +116,7 @@ export default function PlaygroundPage() {
                       </TabsTrigger>
                       <TabsTrigger value="insert">
                         <span className="sr-only">Location</span>
-                        <FaCarSide className="size-5" />
+                        <AiFillNotification className="size-5" />
                       </TabsTrigger>
                       <TabsTrigger value="edit">
                         <span className="sr-only">Chat</span>
@@ -120,10 +124,110 @@ export default function PlaygroundPage() {
                       </TabsTrigger>
                     </TabsList>
                   </div>
-                  <ModelSelector types={types} models={models} />
-                  <TemperatureSelector defaultValue={[0.56]} />
-                  <MaxLengthSelector defaultValue={[256]} />
-                  <TopPSelector defaultValue={[0.9]} />
+
+                  <Card className="">
+                    <CardContent className="flex gap-4 p-5 pb-2">
+                      <ChartContainer
+                        config={{
+                          move: {
+                            label: "Opdrachten",
+                            color: "hsl(var(--chart-1))",
+                          },
+                          stand: {
+                            label: "News",
+                            color: "hsl(var(--chart-2))",
+                          },
+                          exercise: {
+                            label: "Tips",
+                            color: "hsl(var(--chart-3))",
+                          },
+                        }}
+                        className="h-[140px] w-full"
+                      >
+                        <BarChart
+                          margin={{
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 10,
+                          }}
+                          data={[
+                            {
+                              activity: "Opdrachten",
+                              value: (8 / 12) * 100,
+                              label: "1",
+                              fill: "var(--color-stand)",
+                            },
+                            {
+                              activity: "News",
+                              value: (46 / 60) * 100,
+                              label: "1",
+                              fill: "var(--color-exercise)",
+                            },
+                            {
+                              activity: "Tips",
+                              value: 100,
+                              label: "1",
+                              fill: "var(--color-move)",
+                            },
+                          ]}
+                          layout="vertical"
+                          barSize={32}
+                          barGap={2}
+                        >
+                          <XAxis type="number" dataKey="value" hide />
+                          <YAxis
+                            dataKey="activity"
+                            type="category"
+                            tickLine={false}
+                            tickMargin={4}
+                            axisLine={false}
+                            className="capitalize"
+                          />
+                          <Bar dataKey="value" radius={5}>
+                            <LabelList
+                              position="insideLeft"
+                              dataKey="label"
+                              fill="white"
+                              offset={8}
+                              fontSize={12}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ChartContainer>
+                    </CardContent>
+                    <CardFooter className="flex flex-row border-t p-4">
+                      <div className="flex w-full items-center gap-2">
+                        <div className="grid flex-1 auto-rows-min gap-0.5">
+                          <div className="text-xs text-muted-foreground">
+                            Hunts
+                          </div>
+                          <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
+                            0
+                            {/* <span className="text-sm font-normal text-muted-foreground">
+                              kcal
+                            </span> */}
+                          </div>
+                        </div>
+                        <Separator
+                          orientation="vertical"
+                          className="mx-2 h-10 w-px"
+                        />
+                        <div className="grid flex-1 auto-rows-min gap-0.5">
+                          <div className="text-xs text-muted-foreground">
+                            Leaderboard
+                          </div>
+                          <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
+                            10
+                            {/* <span className="text-sm font-normal text-muted-foreground">
+                              position
+                            </span> */}
+                          </div>
+                        </div>
+                      </div>
+                    </CardFooter>
+                  </Card>
+
                   <Separator style={{ height: "2px" }} />
                   <AreaStatusButtons />
                 </div>
@@ -162,13 +266,21 @@ export default function PlaygroundPage() {
                   </TabsContent>
                   <TabsContent value="insert" className="mt-0 border-0 p-0">
                     <div className="flex flex-col space-y-4">
-                      <div className="grid h-full grid-rows-2 gap-6 lg:grid-cols-2 lg:grid-rows-1">
-                        {/* <Textarea
-                          placeholder="We're writing to [inset]. Congrats from OpenAI!"
-                          className="h-full min-h-[300px] lg:min-h-[700px] xl:min-h-[700px]"
-                        /> */}
-                        {isMounted && <MapWithNoSSR />}
-                        <div className="rounded-md border bg-muted"></div>
+                      <div
+                        style={{ maxHeight: "80vh" }}
+                        className="grid h-full grid-rows-2 gap-6 lg:grid-cols-2 lg:grid-rows-1"
+                      >
+                        <div
+                          style={{ overflow: "hidden" }}
+                          id="news"
+                          className="rounded-md border  bg-muted"
+                        >
+                          <NewsCardList />
+                        </div>
+                        <div
+                          id="opdrachten"
+                          className="rounded-md border w-full bg-muted"
+                        ></div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button>Submit</Button>
@@ -293,7 +405,7 @@ export default function PlaygroundPage() {
                               <HoverCard openDelay={200}>
                                 <HoverCardTrigger asChild>
                                   <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Mode
+                                    Select Page
                                   </span>
                                 </HoverCardTrigger>
                                 <HoverCardContent
@@ -314,7 +426,7 @@ export default function PlaygroundPage() {
                                 </TabsTrigger>
                                 <TabsTrigger value="insert">
                                   <span className="sr-only">Location</span>
-                                  <FaCarSide className="h-5 w-5" />
+                                  <AiFillNotification className="h-5 w-5" />
                                 </TabsTrigger>
                                 <TabsTrigger value="edit">
                                   <span className="sr-only">Chat</span>
@@ -326,6 +438,108 @@ export default function PlaygroundPage() {
                             {/* <TemperatureSelector defaultValue={[0.56]} />
                             <MaxLengthSelector defaultValue={[256]} />
                             <TopPSelector defaultValue={[0.9]} /> */}
+                            <Card className="">
+                              <CardContent className="flex gap-4 p-5 pb-2">
+                                <ChartContainer
+                                  config={{
+                                    move: {
+                                      label: "Opdrac..",
+                                      color: "hsl(var(--chart-1))",
+                                    },
+                                    stand: {
+                                      label: "News",
+                                      color: "hsl(var(--chart-2))",
+                                    },
+                                    exercise: {
+                                      label: "Tips",
+                                      color: "hsl(var(--chart-3))",
+                                    },
+                                  }}
+                                  className="h-[140px] w-full"
+                                >
+                                  <BarChart
+                                    margin={{
+                                      left: 0,
+                                      right: 0,
+                                      top: 0,
+                                      bottom: 10,
+                                    }}
+                                    data={[
+                                      {
+                                        activity: "Opdrac..",
+                                        value: (8 / 12) * 100,
+                                        label: "1",
+                                        fill: "var(--color-stand)",
+                                      },
+                                      {
+                                        activity: "News",
+                                        value: (46 / 60) * 100,
+                                        label: "1",
+                                        fill: "var(--color-exercise)",
+                                      },
+                                      {
+                                        activity: "Tips",
+                                        value: 100,
+                                        label: "1",
+                                        fill: "var(--color-move)",
+                                      },
+                                    ]}
+                                    layout="vertical"
+                                    barSize={32}
+                                    barGap={2}
+                                  >
+                                    <XAxis type="number" dataKey="value" hide />
+                                    <YAxis
+                                      dataKey="activity"
+                                      type="category"
+                                      tickLine={false}
+                                      tickMargin={4}
+                                      axisLine={false}
+                                      className="capitalize"
+                                    />
+                                    <Bar dataKey="value" radius={5}>
+                                      <LabelList
+                                        position="insideLeft"
+                                        dataKey="label"
+                                        fill="white"
+                                        offset={8}
+                                        fontSize={12}
+                                      />
+                                    </Bar>
+                                  </BarChart>
+                                </ChartContainer>
+                              </CardContent>
+                              <CardFooter className="flex flex-row border-t p-4">
+                                <div className="flex w-full items-center gap-2">
+                                  <div className="grid flex-1 auto-rows-min gap-0.5">
+                                    <div className="text-xs text-muted-foreground">
+                                      Hunts
+                                    </div>
+                                    <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
+                                      0
+                                      {/* <span className="text-sm font-normal text-muted-foreground">
+                              kcal
+                            </span> */}
+                                    </div>
+                                  </div>
+                                  <Separator
+                                    orientation="vertical"
+                                    className="mx-2 h-10 w-px"
+                                  />
+                                  <div className="grid flex-1 auto-rows-min gap-0.5">
+                                    <div className="text-xs text-muted-foreground">
+                                      Leaderboard
+                                    </div>
+                                    <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
+                                      10
+                                      {/* <span className="text-sm font-normal text-muted-foreground">
+                              position
+                            </span> */}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardFooter>
+                            </Card>
                             <Separator className="my-4" />
                             <AreaStatusButtons />
                           </div>
@@ -362,7 +576,7 @@ export default function PlaygroundPage() {
                               <HoverCard openDelay={200}>
                                 <HoverCardTrigger asChild>
                                   <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Mode
+                                    Select Page
                                   </span>
                                 </HoverCardTrigger>
                                 <HoverCardContent
@@ -383,7 +597,7 @@ export default function PlaygroundPage() {
                                 </TabsTrigger>
                                 <TabsTrigger value="insert">
                                   <span className="sr-only">Location</span>
-                                  <FaCarSide className="h-5 w-5" />
+                                  <AiFillNotification className="h-5 w-5" />
                                 </TabsTrigger>
                                 <TabsTrigger value="edit">
                                   <span className="sr-only">Chat</span>
@@ -395,19 +609,124 @@ export default function PlaygroundPage() {
                             <TemperatureSelector defaultValue={[0.56]} />
                             <MaxLengthSelector defaultValue={[256]} />
                             <TopPSelector defaultValue={[0.9]} /> */}
+                            <Card className="">
+                              <CardContent className="flex gap-4 p-5 pb-2">
+                                <ChartContainer
+                                  config={{
+                                    move: {
+                                      label: "Opdrac..",
+                                      color: "hsl(var(--chart-1))",
+                                    },
+                                    stand: {
+                                      label: "News",
+                                      color: "hsl(var(--chart-2))",
+                                    },
+                                    exercise: {
+                                      label: "Tips",
+                                      color: "hsl(var(--chart-3))",
+                                    },
+                                  }}
+                                  className="h-[140px] w-full"
+                                >
+                                  <BarChart
+                                    margin={{
+                                      left: 0,
+                                      right: 0,
+                                      top: 0,
+                                      bottom: 10,
+                                    }}
+                                    data={[
+                                      {
+                                        activity: "Opdrac..",
+                                        value: (8 / 12) * 100,
+                                        label: "1",
+                                        fill: "var(--color-stand)",
+                                      },
+                                      {
+                                        activity: "News",
+                                        value: (46 / 60) * 100,
+                                        label: "1",
+                                        fill: "var(--color-exercise)",
+                                      },
+                                      {
+                                        activity: "Tips",
+                                        value: 100,
+                                        label: "1",
+                                        fill: "var(--color-move)",
+                                      },
+                                    ]}
+                                    layout="vertical"
+                                    barSize={32}
+                                    barGap={2}
+                                  >
+                                    <XAxis type="number" dataKey="value" hide />
+                                    <YAxis
+                                      dataKey="activity"
+                                      type="category"
+                                      tickLine={false}
+                                      tickMargin={4}
+                                      axisLine={false}
+                                      className="capitalize"
+                                    />
+                                    <Bar dataKey="value" radius={5}>
+                                      <LabelList
+                                        position="insideLeft"
+                                        dataKey="label"
+                                        fill="white"
+                                        offset={8}
+                                        fontSize={12}
+                                      />
+                                    </Bar>
+                                  </BarChart>
+                                </ChartContainer>
+                              </CardContent>
+                              <CardFooter className="flex flex-row border-t p-4">
+                                <div className="flex w-full items-center gap-2">
+                                  <div className="grid flex-1 auto-rows-min gap-0.5">
+                                    <div className="text-xs text-muted-foreground">
+                                      Hunts
+                                    </div>
+                                    <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
+                                      0
+                                      {/* <span className="text-sm font-normal text-muted-foreground">
+                              kcal
+                            </span> */}
+                                    </div>
+                                  </div>
+                                  <Separator
+                                    orientation="vertical"
+                                    className="mx-2 h-10 w-px"
+                                  />
+                                  <div className="grid flex-1 auto-rows-min gap-0.5">
+                                    <div className="text-xs text-muted-foreground">
+                                      Leaderboard
+                                    </div>
+                                    <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
+                                      10
+                                      {/* <span className="text-sm font-normal text-muted-foreground">
+                              position
+                            </span> */}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardFooter>
+                            </Card>
                             <Separator className="my-4" />
                             <AreaStatusButtons />
                           </div>
                         </DrawerContent>
                       </Drawer>
                       <div className="grid h-full grid-rows-2 gap-6 lg:grid-cols-2 lg:grid-rows-1">
-                        {/* <Textarea
-                          placeholder="We're writing to [inset]. Congrats from OpenAI!"
-                          className="h-full min-h-[300px] lg:min-h-[700px] xl:min-h-[700px]"
-                        /> */}
-
-                        {isMounted && <MapWithNoSSR />}
-                        <div className="rounded-md border bg-muted"></div>
+                        <div
+                          id="news"
+                          className="rounded-md border h-full min-h-[300px] lg:min-h-[700px] xl:min-h-[700px] bg-muted"
+                        >
+                          <NewsCardList />
+                        </div>
+                        <div
+                          id="opdrachten"
+                          className="rounded-md border h-full w-full bg-muted"
+                        ></div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button>Submit</Button>
@@ -439,7 +758,7 @@ export default function PlaygroundPage() {
                               <HoverCard openDelay={200}>
                                 <HoverCardTrigger asChild>
                                   <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Mode
+                                    Select Page
                                   </span>
                                 </HoverCardTrigger>
                                 <HoverCardContent
@@ -460,7 +779,7 @@ export default function PlaygroundPage() {
                                 </TabsTrigger>
                                 <TabsTrigger value="insert">
                                   <span className="sr-only">Location</span>
-                                  <FaCarSide className="h-5 w-5" />
+                                  <AiFillNotification className="h-5 w-5" />
                                 </TabsTrigger>
                                 <TabsTrigger value="edit">
                                   <span className="sr-only">Chat</span>
@@ -472,6 +791,108 @@ export default function PlaygroundPage() {
                             <TemperatureSelector defaultValue={[0.56]} />
                             <MaxLengthSelector defaultValue={[256]} />
                             <TopPSelector defaultValue={[0.9]} /> */}
+                            <Card className="">
+                              <CardContent className="flex gap-4 p-5 pb-2">
+                                <ChartContainer
+                                  config={{
+                                    move: {
+                                      label: "Opdrac..",
+                                      color: "hsl(var(--chart-1))",
+                                    },
+                                    stand: {
+                                      label: "News",
+                                      color: "hsl(var(--chart-2))",
+                                    },
+                                    exercise: {
+                                      label: "Tips",
+                                      color: "hsl(var(--chart-3))",
+                                    },
+                                  }}
+                                  className="h-[140px] w-full"
+                                >
+                                  <BarChart
+                                    margin={{
+                                      left: 0,
+                                      right: 0,
+                                      top: 0,
+                                      bottom: 10,
+                                    }}
+                                    data={[
+                                      {
+                                        activity: "Opdrac..",
+                                        value: (8 / 12) * 100,
+                                        label: "1",
+                                        fill: "var(--color-stand)",
+                                      },
+                                      {
+                                        activity: "News",
+                                        value: (46 / 60) * 100,
+                                        label: "1",
+                                        fill: "var(--color-exercise)",
+                                      },
+                                      {
+                                        activity: "Tips",
+                                        value: 100,
+                                        label: "1",
+                                        fill: "var(--color-move)",
+                                      },
+                                    ]}
+                                    layout="vertical"
+                                    barSize={32}
+                                    barGap={2}
+                                  >
+                                    <XAxis type="number" dataKey="value" hide />
+                                    <YAxis
+                                      dataKey="activity"
+                                      type="category"
+                                      tickLine={false}
+                                      tickMargin={4}
+                                      axisLine={false}
+                                      className="capitalize"
+                                    />
+                                    <Bar dataKey="value" radius={5}>
+                                      <LabelList
+                                        position="insideLeft"
+                                        dataKey="label"
+                                        fill="white"
+                                        offset={8}
+                                        fontSize={12}
+                                      />
+                                    </Bar>
+                                  </BarChart>
+                                </ChartContainer>
+                              </CardContent>
+                              <CardFooter className="flex flex-row border-t p-4">
+                                <div className="flex w-full items-center gap-2">
+                                  <div className="grid flex-1 auto-rows-min gap-0.5">
+                                    <div className="text-xs text-muted-foreground">
+                                      Hunts
+                                    </div>
+                                    <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
+                                      0
+                                      {/* <span className="text-sm font-normal text-muted-foreground">
+                              kcal
+                            </span> */}
+                                    </div>
+                                  </div>
+                                  <Separator
+                                    orientation="vertical"
+                                    className="mx-2 h-10 w-px"
+                                  />
+                                  <div className="grid flex-1 auto-rows-min gap-0.5">
+                                    <div className="text-xs text-muted-foreground">
+                                      Leaderboard
+                                    </div>
+                                    <div className="flex items-baseline gap-1 text-2xl font-bold tabular-nums leading-none">
+                                      10
+                                      {/* <span className="text-sm font-normal text-muted-foreground">
+                              position
+                            </span> */}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardFooter>
+                            </Card>
                             <Separator className="my-4" />
                             <AreaStatusButtons />
                           </div>
