@@ -18,10 +18,9 @@ export function PresetShare() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[520px]">
         <div className="flex flex-col space-y-2 text-center sm:text-left">
-          <h3 className="text-lg font-semibold">Share preset</h3>
+          <h3 className="text-lg font-semibold">Share site</h3>
           <p className="text-sm text-muted-foreground">
-            Anyone who has this link and an OpenAI account will be able to view
-            this.
+            Anyone who has this link will be able to view this site and use it.
           </p>
         </div>
         <div className="flex items-center space-x-2 pt-4">
@@ -31,7 +30,7 @@ export function PresetShare() {
             </Label>
             <Input
               id="link"
-              defaultValue="https://platform.openai.com/playground/p/7bbKYQvsVkNmVb8NGcdUOLae?model=text-davinci-003"
+              defaultValue="https://openjotihuntmap.com/?code="
               readOnly
               className="h-9"
             />

@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
-import { CodeViewer } from "@/components/code-viewer";
+// import { CodeViewer } from "@/components/code-viewer";
 import { MaxLengthSelector } from "@/components/maxlength-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { PresetActions } from "@/components/preset-actions";
@@ -68,7 +68,6 @@ export default function PlaygroundPage() {
             <h2 style={{ width: "100%" }} className="text-lg font-semibold">
               JotiHunt Map
             </h2>
-            <ModeToggle></ModeToggle>
 
             <div
               style={{ paddingLeft: "10px" }}
@@ -77,8 +76,9 @@ export default function PlaygroundPage() {
               <PresetSelector presets={presets} />
               <PresetSave />
               <div className="hidden space-x-2 md:flex">
-                <CodeViewer />
+                {/* <CodeViewer /> */}
                 <PresetShare />
+                <ModeToggle />
               </div>
               <PresetActions />
             </div>
@@ -228,18 +228,22 @@ export default function PlaygroundPage() {
             >
               JotiHunt Map
             </h2>
+            {/* <p style={{ width: "100%" }} className="text-xs text-center">
+              The hunt app for on the move
+            </p> */}
             {/* <ModeToggle></ModeToggle> */}
 
             <div
               style={{ paddingLeft: "10px" }}
-              className="ml-auto flex w-full space-x-2 sm:justify-end"
+              className="ml-auto flex w-full space-x-2 sm:justify-end items-center center-content"
             >
-              <PresetSelector presets={presets} />
+              {/* <PresetSelector presets={presets} /> */}
               <PresetSave />
               <div className="hidden space-x-2 md:flex">
-                <CodeViewer />
+                {/* <CodeViewer /> */}
                 <PresetShare />
               </div>
+              <ModeToggle />
               <PresetActions />
             </div>
           </div>
