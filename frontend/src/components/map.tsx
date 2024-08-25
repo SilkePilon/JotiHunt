@@ -444,7 +444,7 @@ const Map = ({ initialPosition }) => {
                 marker: false,
                 circlemarker: false,
                 polygon: false,
-                polyline: false,
+                polyline: true,
                 circle: {
                   metric: true,
                   showArea: true,
