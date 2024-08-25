@@ -31,7 +31,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
-
+import { FaGithub } from "react-icons/fa";
+import { FaInfoCircle } from "react-icons/fa";
 export function PresetActions() {
   const [open, setIsOpen] = React.useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
@@ -41,27 +42,37 @@ export function PresetActions() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary">
-            <span className="sr-only">Actions</span>
+            <span className="sr-only">About</span>
             <DotsHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setIsOpen(true)}>
-            Content filter preferences
+            <FaInfoCircle style={{ marginRight: "7px" }} />
+            About
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
+            onSelect={() => {
+              window.location.href =
+                "https://github.com/SilkePilon/OpenJotiHuntMap";
+            }}
+          >
+            <FaGithub style={{ marginRight: "7px" }} /> Github
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {/* <DropdownMenuItem
             onSelect={() => setShowDeleteDialog(true)}
             className="text-red-600"
           >
             Delete preset
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
       <Dialog open={open} onOpenChange={setIsOpen}>
-        <DialogContent>
+        <DialogContent style={{ borderRadius: "0.75rem" }}>
           <DialogHeader>
-            <DialogTitle>Content filter preferences</DialogTitle>
+            <DialogTitle>About</DialogTitle>
             <DialogDescription>
               The content filter flags text that may violate our content policy.
               It&apos;s powered by our moderation endpoint which is free to use

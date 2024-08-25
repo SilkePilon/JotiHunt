@@ -1,37 +1,90 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import fetchAllLocations from "@/components/map";
 import { useToast } from "@/components/ui/use-toast";
+import { useMediaQuery } from "usehooks-ts";
+import { FaLocationDot } from "react-icons/fa6";
+// Move LocationForm outside of PresetSave
+const LocationForm = ({
+  formData,
+  handleInputChange,
+  handleSubmit,
+  formRef,
+}) => (
+  <form onSubmit={handleSubmit} ref={formRef} className="space-y-4">
+    <div>
+      <Label htmlFor="name">Name</Label>
+      <Input
+        id="name"
+        name="name"
+        value={formData.name}
+        onChange={handleInputChange}
+        onPointerDown={(e) => e.stopPropagation()}
+        required
+        className="mt-1"
+      />
+      <p className="text-sm text-muted-foreground mt-1">
+        This will be displayed to others when they view your location.
+      </p>
+    </div>
+    <div>
+      <Label htmlFor="description">Description</Label>
+      <Input
+        id="description"
+        name="description"
+        value={formData.description}
+        onChange={handleInputChange}
+        onPointerDown={(e) => e.stopPropagation()}
+        required
+        className="mt-1"
+      />
+      <p className="text-sm text-muted-foreground mt-1">
+        Please specify your purpose for sharing location. Are you a driver,
+        passenger, or working on a photo objective?
+      </p>
+    </div>
+    <Button type="submit" className="w-full">
+      Start Sharing!
+    </Button>
+  </form>
+);
+
 export function PresetSave() {
   const { toast } = useToast();
-  const [name, setName] = useState(""); // State for user's name
-  const [description, setDescription] = useState(""); // State for description
-  const [isDialogOpen, setIsDialogOpen] = useState(false); // State to control dialog visibility
-  const [isSharing, setIsSharing] = useState(false); // State to control location sharing
-  // Function to handle form submission
+  const [formData, setFormData] = useState({ name: "", description: "" });
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const formRef = useRef(null);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (name.trim() && description.trim()) {
-      // Call onSave with name and description
-      await saveLocation(name, description); // Trigger the save action
-      setIsDialogOpen(false); // Close the dialog after submission
+    if (formData.name.trim() && formData.description.trim()) {
+      await saveLocation(formData.name, formData.description);
+      setIsOpen(false);
     }
   };
 
-  // Function to save location with name and description
   const saveLocation = async (name, description) => {
     if (!isSharing) {
       if (navigator.geolocation) {
@@ -83,59 +136,89 @@ export function PresetSave() {
     }
   };
 
-  return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="secondary"
-          style={{ backgroundColor: `${isSharing ? "#90EE90" : "#ff6961"}` }}
-        >
-          Location
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[475px] w-full">
-        <DialogHeader>
-          <DialogTitle>Live Location Share</DialogTitle>
-          <DialogDescription>
-            This will share your current location every 2 minutes.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <DialogDescription>
-                This will be displayed to others when they view your location.
-              </DialogDescription>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoFocus
-                required
-                className="border rounded p-2 w-full"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <DialogDescription>
-                Please specify your purpose for sharing location. Are you a
-                driver, passenger, or working on a photo objective?
-              </DialogDescription>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-                className="border rounded p-2 w-full"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit">Start Sharing!</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }, []);
+
+  const handleOpenChange = useCallback(
+    (open) => {
+      setIsOpen(open);
+      if (open && !isDesktop) {
+        // Use requestAnimationFrame to ensure the drawer is fully rendered
+        requestAnimationFrame(() => {
+          if (formRef.current) {
+            const firstInput = formRef.current.querySelector("input");
+            if (firstInput) {
+              firstInput.focus();
+            }
+          }
+        });
+      }
+    },
+    [isDesktop]
   );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button
+            variant="secondary"
+            style={{ backgroundColor: `${isSharing ? "#90EE90" : "#ff6961"}` }}
+          >
+            Share Location
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Live Location Share</DialogTitle>
+            <DialogDescription>
+              This will share your current location every 2 minutes.
+            </DialogDescription>
+          </DialogHeader>
+          <LocationForm
+            formData={formData}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleSubmit}
+            formRef={formRef}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  } else {
+    return (
+      <Drawer open={isOpen} onOpenChange={handleOpenChange}>
+        <DrawerTrigger asChild>
+          <Button
+            variant="secondary"
+            style={{ backgroundColor: `${isSharing ? "#90EE90" : "#ff6961"}` }}
+          >
+            Share <FaLocationDot style={{ marginLeft: "7px" }} />
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Live Location Share</DrawerTitle>
+            <DrawerDescription>
+              This will share your current location every 2 minutes.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 pb-0">
+            <LocationForm
+              formData={formData}
+              handleInputChange={handleInputChange}
+              handleSubmit={handleSubmit}
+              formRef={formRef}
+            />
+          </div>
+          <DrawerFooter className="pt-2">
+            <DrawerClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 }

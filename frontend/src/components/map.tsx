@@ -46,10 +46,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Bar, BarChart, Rectangle, XAxis } from "recharts";
+
+import { CardDescription, CardTitle } from "@/components/ui/card";
+import { ChartContainer } from "@/components/ui/chart";
 import { EditControl } from "react-leaflet-draw";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
-import { L } from "leaflet";
+import { L, Map } from "leaflet";
 const FormSchema = z.object({
   email: z
     .string({
@@ -59,6 +63,9 @@ const FormSchema = z.object({
   name: z.string().min(1, "Name is required."),
   description: z.string().min(1, "Description is required."),
 });
+import { FaLocationDot } from "react-icons/fa6";
+import { FaMapMarkedAlt } from "react-icons/fa";
+import { MdPhotoCamera } from "react-icons/md";
 
 const Map = ({ initialPosition }) => {
   const [groups, setGroups] = useState([]);
@@ -75,7 +82,7 @@ const Map = ({ initialPosition }) => {
   const centerOfNetherlands = [52.2858356, 5.6549385899207];
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState(null);
-  const mapRef = useRef();
+  const [map, setMap] = useState<Map | null>(null);
   const { toast } = useToast();
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -182,41 +189,60 @@ const Map = ({ initialPosition }) => {
   };
 
   const handleSearch = async () => {
-    try {
-      const response = await fetch(
-        `https://geocode.maps.co/search?q=${encodeURIComponent(
-          searchQuery
-        )}&api_key=66ca693174165807352697gay65c011`
-      );
-      const data = await response.json();
+    // Regular expression to match latitude and longitude coordinates
+    const coordRegex = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+    const match = searchQuery.match(coordRegex);
 
-      console.log(data);
+    if (match) {
+      // If the input matches the coordinate pattern, use these coordinates directly
+      const lat = parseFloat(match[1]);
+      const lon = parseFloat(match[3]);
 
-      if (data && data.length > 0) {
-        const result = data[0];
-        setSearchResult({
-          lat: parseFloat(result.lat),
-          lon: parseFloat(result.lon),
-          display_name: result.display_name,
-        });
+      setSearchResult({
+        lat,
+        lon,
+        display_name: `${lat}, ${lon} - radius: 1m`,
+        radius: 1,
+      });
+    } else {
+      // If not coordinates, proceed with the geocoding lookup
+      try {
+        const response = await fetch(
+          `https://geocode.maps.co/search?q=${encodeURIComponent(
+            searchQuery
+          )}&api_key=66ca693174165807352697gay65c011`
+        );
+        const data = await response.json();
 
-        // Fit the map to the search result
-        const map = mapRef.current.leafletElement;
-        // map.setView([result.lat, result.lon], 15);
-      } else {
+        console.log(data);
+
+        if (data && data.length > 0) {
+          const result = data[0];
+          setSearchResult({
+            lat: parseFloat(result.lat),
+            lon: parseFloat(result.lon),
+            display_name: result.display_name,
+            radius: 50,
+          });
+
+          // Fit the map to the search result
+          const mapd = map.current.leafletElement;
+          mapd.setView([result.lat, result.lon], 15);
+        } else {
+          toast({
+            title: "No results found",
+            description: "Please try a different search query.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error searching for location:", error);
         toast({
-          title: "No results found",
-          description: "Please try a different search query.",
+          title: "Error",
+          description: "An error occurred while searching. Please try again.",
           variant: "destructive",
         });
       }
-    } catch (error) {
-      console.error("Error searching for location:", error);
-      toast({
-        title: "Error",
-        description: "An error occurred while searching. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -232,7 +258,7 @@ const Map = ({ initialPosition }) => {
     return searchResult ? (
       <Circle
         center={[searchResult.lat, searchResult.lon]}
-        radius={50}
+        radius={searchResult.radius}
         pathOptions={{ fillColor: "red", color: "red" }}
       >
         <Popup>
@@ -250,11 +276,11 @@ const Map = ({ initialPosition }) => {
         open={foxLocationDialogOpen}
         onOpenChange={setFoxLocationDialogOpen}
       >
-        <AlertDialogContent>
+        <AlertDialogContent style={{ borderRadius: "0.76rem" }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Submit Your Details</AlertDialogTitle>
+            <AlertDialogTitle>Submit Area Notice!</AlertDialogTitle>
             <AlertDialogDescription>
-              Please fill out the form below to submit your details.
+              Have you seen something in this area?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Form {...form}>
@@ -294,7 +320,7 @@ const Map = ({ initialPosition }) => {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="What is in this area..." />
+                              <SelectValue placeholder="For example: Alpha team" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -314,6 +340,15 @@ const Map = ({ initialPosition }) => {
                             <SelectItem value="foxtrot">
                               Fox team Foxtrot
                             </SelectItem>
+                            <SelectItem value="unknown">
+                              Unknown fox team
+                            </SelectItem>
+                            <SelectItem value="group">
+                              Other scouting group
+                            </SelectItem>
+                            <SelectItem value="other">
+                              other (please specify in description)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -325,9 +360,9 @@ const Map = ({ initialPosition }) => {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description (optional)</FormLabel>
+                        <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter a description" />
+                          <Input {...field} placeholder="Last seen at..." />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -358,7 +393,7 @@ const Map = ({ initialPosition }) => {
         <MapContainer
           center={centerOfNetherlands}
           zoom={10}
-          ref={mapRef}
+          ref={setMap}
           style={{ height: "80vh", width: "100%", borderRadius: "0.75rem" }}
         >
           <LayersControl position="topright">
@@ -444,7 +479,20 @@ const Map = ({ initialPosition }) => {
                 marker: false,
                 circlemarker: false,
                 polygon: false,
-                polyline: true,
+                polyline: {
+                  metric: true,
+                  showArea: true,
+                  allowIntersection: false, // Restricts shapes to simple polygons
+
+                  drawError: {
+                    color: "#FF5733", // Color the shape will turn when intersects
+                    message:
+                      "<strong>Polygon!<strong> (allowIntersection: false)", // Message that will show when intersect
+                  },
+                  shapeOptions: {
+                    color: "black",
+                  },
+                },
                 circle: {
                   metric: true,
                   showArea: true,
@@ -490,53 +538,132 @@ const Map = ({ initialPosition }) => {
           ))}
 
           {jotihuntGroups.map((group, index) => (
-            <>
+            <React.Fragment key={index}>
               <Circle
-                key={index}
                 center={[parseFloat(group.lat), parseFloat(group.long)]}
                 radius={1000}
                 pathOptions={{ fillColor: getRandomColor(), color: "black" }}
               >
-                <Popup className="request-popup">
-                  <p>Name: {group.name}</p>
-                  <p>Accommodation: {group.accomodation}</p>
-                  <p>
-                    Address: {group.street} {group.housenumber}
-                    {group.housenumber_addition}
-                  </p>
-                  <p>
-                    {group.postcode} {group.city}
-                  </p>
+                <Popup className="request-popup" minWidth={280} maxWidth={280}>
+                  <Card className="w-full h-full shadow-none">
+                    <CardHeader className="p-4 pb-0">
+                      <CardTitle>{group.name}</CardTitle>
+
+                      <CardDescription>
+                        <div className="space-y-2">
+                          {group.accomodation} -{" "}
+                          <a
+                            target="_blank"
+                            className="underline"
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${
+                              group.street
+                            }+${group.housenumber}${
+                              group.housenumber_addition
+                                ? group.housenumber_addition
+                                : ""
+                            }+${group.city}&travelmode=walking`}
+                          >
+                            {group.street} {group.housenumber}
+                            {group.housenumber_addition} {group.city}
+                          </a>
+                          <ul className="space-y-2">
+                            <li className="flex items-center">
+                              <FaLocationDot className="mr-2" />
+                              <span>
+                                {group.lat}, {group.long}
+                              </span>
+                            </li>
+                            <li className="flex items-center">
+                              <FaMapMarkedAlt className="mr-2" />
+                              <span>{group.area ? group.area : "No data"}</span>
+                            </li>
+                            <li className="flex items-center">
+                              <MdPhotoCamera className="mr-2" />
+                              <span>
+                                {group.photo_assignment_points ? 0 : 0} photo
+                                assignment points
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent
+                      style={{ marginTop: "10px" }}
+                      className="flex flex-row items-baseline gap-4 p-4 pt-2"
+                    >
+                      <Button
+                        onClick={() => {
+                          map && map.closePopup();
+                        }}
+                        className="w-full"
+                        style={{ backgroundColor: "#ff6961" }}
+                      >
+                        Close
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </Popup>
               </Circle>
               <Circle
-                key={index * 2}
                 center={[parseFloat(group.lat), parseFloat(group.long)]}
                 radius={49}
                 pathOptions={{ fillColor: getRandomColor(), color: "black" }}
               >
-                <Popup className="request-popup">
-                  <h1>
-                    This circle area is within 50 meters of the main clubhouse
-                  </h1>
+                <Popup className="request-popup" minWidth={280} maxWidth={280}>
+                  <Card className="w-full h-full shadow-none">
+                    <CardHeader className="p-4 pb-0">
+                      <CardTitle>{group.name}</CardTitle>
+                      <CardDescription>
+                        <div className="space-y-2">
+                          Inside this area you can place your counter hunt!
+                          <ul
+                            style={{ paddingTop: "10px" }}
+                            className="space-y-2"
+                          >
+                            <li className="flex items-center">
+                              <FaLocationDot className="mr-2" />
+                              <span>Within 50 meters</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent
+                      style={{ marginTop: "10px" }}
+                      className="flex flex-row items-baseline gap-4 p-4 pt-2"
+                    >
+                      <Button
+                        onClick={() => {
+                          map && map.closePopup();
+                        }}
+                        className="w-full"
+                        style={{ backgroundColor: "#ff6961" }}
+                      >
+                        Close
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </Popup>
               </Circle>
-            </>
+            </React.Fragment>
           ))}
         </MapContainer>
         <div
-          className="absolute left-1/2 transform -translate-x-1/2 z-[1] flex items-center space-x-2"
+          className="absolute left-1/2 transform -translate-x-1/2 z-[1] flex flex-col items-center space-y-2"
           style={{ marginTop: "-78vh" }}
         >
-          <Input
-            className="w-64"
-            placeholder="Search for location"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Button onClick={handleSearch} variant="secondary" className="w-20">
-            Search
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Input
+              style={{ width: "30vw" }}
+              placeholder="location name or lat/long..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Button onClick={handleSearch} variant="secondary" className="w-20">
+              Search
+            </Button>
+          </div>
         </div>
       </div>
 

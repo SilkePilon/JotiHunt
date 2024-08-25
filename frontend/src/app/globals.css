@@ -66,9 +66,18 @@
 }
 
 .request-popup .leaflet-popup-content-wrapper {
-  border-radius: "0.75rem";
-  background-color: hsl(var(--primary-foreground));
-  color: hsl(var(--primary));
+ background-color: rgba(52, 52, 52, 0);
+ box-shadow: none;
+ 
+}
+
+.request-popup .leaflet-popup-tip {
+  display: none;
+  box-shadow: none;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  display: none;
 }
 
 .sr-only {
