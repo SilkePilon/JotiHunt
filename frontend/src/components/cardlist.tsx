@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TbCoins } from "react-icons/tb";
 import { FaCheck, FaEye, FaUser } from "react-icons/fa";
 import { Separator } from "@/components/ui/separator";
+import { HiExclamationTriangle } from "react-icons/hi2";
 
 const NewsCard = ({ article, onUpdateArticle }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -84,7 +85,7 @@ const NewsCard = ({ article, onUpdateArticle }) => {
           <p className="text-sm text-gray-500">{article.source}</p>
           {article.status && (
             <div className="flex items-center space-x-2 text-sm text-gray-500">
-              <FaUser className="size-4" />
+              <HiExclamationTriangle className="size-4" />
               <span>{article.status}</span>
             </div>
           )}

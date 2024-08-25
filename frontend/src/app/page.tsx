@@ -820,19 +820,19 @@ export default function PlaygroundPage() {
                                     data={[
                                       {
                                         activity: "Opdrac..",
-                                        value: (8 / 12) * 100,
+                                        value: 1,
                                         label: "1",
                                         fill: "var(--color-stand)",
                                       },
                                       {
                                         activity: "News",
-                                        value: (46 / 60) * 100,
+                                        value: 1,
                                         label: "1",
                                         fill: "var(--color-exercise)",
                                       },
                                       {
                                         activity: "Tips",
-                                        value: 100,
+                                        value: 1,
                                         label: "1",
                                         fill: "var(--color-move)",
                                       },
