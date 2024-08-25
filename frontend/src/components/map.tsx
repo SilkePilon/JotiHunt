@@ -474,7 +474,7 @@ const Map = ({ initialPosition }) => {
             <Circle
               key={index}
               center={[group.latitude, group.longitude]}
-              radius={300}
+              radius={2}
               pathOptions={{ fillColor: getRandomColor(), color: "black" }}
               eventHandlers={{
                 click: () => setSelectedGroup(group),
