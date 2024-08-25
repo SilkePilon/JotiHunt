@@ -25,6 +25,7 @@ import { models, types } from "./data/models";
 import { presets } from "./data/presets";
 import { ModeToggle } from "@/components/mode-toggle";
 import dynamic from "next/dynamic";
+import AreaStatusButtons from "@/components/AreaStatusButtons"; // Import the new component
 
 const MapWithNoSSR = dynamic(() => import("@/components/map"), {
   ssr: false,
@@ -144,42 +145,7 @@ export default function PlaygroundPage() {
                 <MaxLengthSelector defaultValue={[256]} />
                 <TopPSelector defaultValue={[0.9]} />
                 <Separator style={{ height: "2px" }} />
-                <Button
-                  style={{ backgroundColor: "#ff6961" }}
-                  variant={"outline"}
-                >
-                  Alpha
-                </Button>
-                <Button
-                  style={{ backgroundColor: "#ff6961" }}
-                  variant={"outline"}
-                >
-                  Bravo
-                </Button>
-                <Button
-                  style={{ backgroundColor: "#ff6961" }}
-                  variant={"outline"}
-                >
-                  Charlie
-                </Button>
-                <Button
-                  style={{ backgroundColor: "#ff6961" }}
-                  variant={"outline"}
-                >
-                  Delta
-                </Button>
-                <Button
-                  style={{ backgroundColor: "#ff6961" }}
-                  variant={"outline"}
-                >
-                  Echo
-                </Button>
-                <Button
-                  style={{ backgroundColor: "#ff6961" }}
-                  variant={"outline"}
-                >
-                  Foxtrot
-                </Button>
+                <AreaStatusButtons />
               </div>
               <div className="md:order-1">
                 <TabsContent value="complete" className="mt-0 border-0 p-0">

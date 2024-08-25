@@ -67,7 +67,12 @@
 
 .request-popup .leaflet-popup-content-wrapper {
   border-radius: "0.75rem";
-  background-color: red;
+  background-color: hsl(var(--primary-foreground));
+  color: hsl(var(--primary));
+}
+
+.sr-only {
+  display: none;
 }
 
 @layer base {
