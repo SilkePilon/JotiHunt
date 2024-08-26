@@ -251,13 +251,6 @@ export default function PlaygroundPage() {
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                       </MapContainer> */}
                       {isMounted && <MapWithNoSSR />}
-                      <div className="flex items-center space-x-2">
-                        <Button>Submit</Button>
-                        <Button variant="secondary">
-                          <span className="sr-only">Show history</span>
-                          <CounterClockwiseClockIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </div>
                   </TabsContent>
                   <TabsContent value="insert" className="mt-0 border-0 p-0">
@@ -277,13 +270,6 @@ export default function PlaygroundPage() {
                           id="opdrachten"
                           className="rounded-md border w-full bg-muted"
                         ></div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button>Submit</Button>
-                        <Button variant="secondary">
-                          <span className="sr-only">Show history</span>
-                          <CounterClockwiseClockIcon className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
@@ -308,13 +294,6 @@ export default function PlaygroundPage() {
                           </div>
                         </div>
                         <div className="mt-[21px] min-h-[400px] rounded-md border bg-muted lg:min-h-[700px]" />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button>Submit</Button>
-                        <Button variant="secondary">
-                          <span className="sr-only">Show history</span>
-                          <CounterClockwiseClockIcon className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
@@ -538,13 +517,6 @@ export default function PlaygroundPage() {
                         </DrawerContent>
                       </Drawer>
                       {isMounted && <MapWithNoSSR classname="max-h-1.5" />}
-                      <div className="flex items-center space-x-2">
-                        <Button>Submit</Button>
-                        <Button variant="secondary">
-                          <span className="sr-only">Show history</span>
-                          <CounterClockwiseClockIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </div>
                   </TabsContent>
                   <TabsContent value="insert" className="mt-0 border-0 p-0">
@@ -715,13 +687,6 @@ export default function PlaygroundPage() {
                           id="opdrachten"
                           className="rounded-md border h-full w-full bg-muted"
                         ></div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button>Submit</Button>
-                        <Button variant="secondary">
-                          <span className="sr-only">Show history</span>
-                          <CounterClockwiseClockIcon className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
@@ -901,13 +866,6 @@ export default function PlaygroundPage() {
                           </div>
                         </div>
                         <div className="mt-[21px] min-h-[400px] rounded-md border bg-muted lg:min-h-[700px]" />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button>Submit</Button>
-                        <Button variant="secondary">
-                          <span className="sr-only">Show history</span>
-                          <CounterClockwiseClockIcon className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
