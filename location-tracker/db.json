@@ -10,9 +10,9 @@
       },
       "status": "Heeft meer hulp nodig",
       "assignedTo": "Silke, Jonas",
-      "completed": false,
-      "reviewed": false,
-      "points": "0"
+      "completed": true,
+      "reviewed": true,
+      "points": "10"
     },
     {
       "id": 6,

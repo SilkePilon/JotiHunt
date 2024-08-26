@@ -66,6 +66,7 @@ const FormSchema = z.object({
 import { FaLocationDot } from "react-icons/fa6";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { MdPhotoCamera } from "react-icons/md";
+import { SiGooglemaps } from "react-icons/si";
 
 const Map = ({ initialPosition }) => {
   const [groups, setGroups] = useState([]);
@@ -561,7 +562,7 @@ const Map = ({ initialPosition }) => {
                               group.housenumber_addition
                                 ? group.housenumber_addition
                                 : ""
-                            }+${group.city}&travelmode=walking`}
+                            }+${group.city}&travelmode=driving`}
                           >
                             {group.street} {group.housenumber}
                             {group.housenumber_addition} {group.city}
@@ -573,17 +574,19 @@ const Map = ({ initialPosition }) => {
                                 {group.lat}, {group.long}
                               </span>
                             </li>
-                            <li className="flex items-center">
-                              <FaMapMarkedAlt className="mr-2" />
-                              <span>{group.area ? group.area : "No data"}</span>
-                            </li>
-                            <li className="flex items-center">
+                            {group.area && (
+                              <li className="flex items-center">
+                                <FaMapMarkedAlt className="mr-2" />
+                                <span>{group.area}</span>
+                              </li>
+                            )}
+                            {/* <li className="flex items-center">
                               <MdPhotoCamera className="mr-2" />
                               <span>
                                 {group.photo_assignment_points ? 0 : 0} photo
                                 assignment points
                               </span>
-                            </li>
+                            </li> */}
                           </ul>
                         </div>
                       </CardDescription>
@@ -592,6 +595,24 @@ const Map = ({ initialPosition }) => {
                       style={{ marginTop: "10px" }}
                       className="flex flex-row items-baseline gap-4 p-4 pt-2"
                     >
+                      <Button className="w-full">
+                        <a
+                          style={{ color: "inherit" }}
+                          target="_blank"
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${
+                            group.street
+                          }+${group.housenumber}${
+                            group.housenumber_addition
+                              ? group.housenumber_addition
+                              : ""
+                          }+${group.city}&travelmode=driving`}
+                        >
+                          <div className="flex items-center">
+                            <SiGooglemaps className="mr-2" />
+                            <span>Get directions</span>
+                          </div>
+                        </a>
+                      </Button>
                       <Button
                         onClick={() => {
                           map && map.closePopup();
@@ -607,7 +628,7 @@ const Map = ({ initialPosition }) => {
               </Circle>
               <Circle
                 center={[parseFloat(group.lat), parseFloat(group.long)]}
-                radius={49}
+                radius={499}
                 pathOptions={{ fillColor: getRandomColor(), color: "black" }}
               >
                 <Popup className="request-popup" minWidth={280} maxWidth={280}>
