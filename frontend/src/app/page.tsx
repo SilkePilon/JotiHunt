@@ -77,14 +77,14 @@ export default function PlaygroundPage() {
               style={{ paddingLeft: "10px" }}
               className="ml-auto flex w-full space-x-2 sm:justify-end"
             >
-              <PresetSelector presets={presets} />
+              {/* <PresetSelector presets={presets} /> */}
               <PresetSave />
               <div className="hidden space-x-2 md:flex">
                 {/* <CodeViewer /> */}
-                <PresetShare />
+                {/* <PresetShare /> */}
                 <ModeToggle />
               </div>
-              <PresetActions />
+              {/* <PresetActions /> */}
             </div>
           </div>
           <Separator />
@@ -109,17 +109,13 @@ export default function PlaygroundPage() {
                         with instructions to edit it.
                       </HoverCardContent>
                     </HoverCard>
-                    <TabsList className="grid grid-cols-3">
+                    <TabsList className="grid grid-cols-2">
                       <TabsTrigger value="complete">
                         <span className="sr-only">Map</span>
                         <FaGlobeAmericas className="size-5" />
                       </TabsTrigger>
                       <TabsTrigger value="insert">
                         <span className="sr-only">Location</span>
-                        <AiFillNotification className="size-5" />
-                      </TabsTrigger>
-                      <TabsTrigger value="edit">
-                        <span className="sr-only">Chat</span>
                         <IoChatbox className="size-5" />
                       </TabsTrigger>
                     </TabsList>
@@ -350,10 +346,10 @@ export default function PlaygroundPage() {
               className="ml-auto flex w-full space-x-2 sm:justify-end items-center center-content"
             >
               {/* <PresetSelector presets={presets} /> */}
-              <PresetSave />
+              {/* <PresetSave /> */}
               <div className="hidden space-x-2 md:flex">
                 {/* <CodeViewer /> */}
-                <PresetShare />
+                {/* <PresetShare /> */}
               </div>
               <ModeToggle />
               <PresetActions />
@@ -419,17 +415,13 @@ export default function PlaygroundPage() {
                                   instructions to edit it.
                                 </HoverCardContent>
                               </HoverCard>
-                              <TabsList className="grid w-full grid-cols-3">
+                              <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="complete">
                                   <span className="sr-only">Map</span>
                                   <FaGlobeAmericas className="h-5 w-5" />
                                 </TabsTrigger>
                                 <TabsTrigger value="insert">
                                   <span className="sr-only">Location</span>
-                                  <AiFillNotification className="h-5 w-5" />
-                                </TabsTrigger>
-                                <TabsTrigger value="edit">
-                                  <span className="sr-only">Chat</span>
                                   <IoChatbox className="h-5 w-5" />
                                 </TabsTrigger>
                               </TabsList>
@@ -590,17 +582,13 @@ export default function PlaygroundPage() {
                                   instructions to edit it.
                                 </HoverCardContent>
                               </HoverCard>
-                              <TabsList className="grid w-full grid-cols-3">
+                              <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="complete">
                                   <span className="sr-only">Map</span>
                                   <FaGlobeAmericas className="h-5 w-5" />
                                 </TabsTrigger>
                                 <TabsTrigger value="insert">
                                   <span className="sr-only">Location</span>
-                                  <AiFillNotification className="h-5 w-5" />
-                                </TabsTrigger>
-                                <TabsTrigger value="edit">
-                                  <span className="sr-only">Chat</span>
                                   <IoChatbox className="h-5 w-5" />
                                 </TabsTrigger>
                               </TabsList>
@@ -772,17 +760,13 @@ export default function PlaygroundPage() {
                                   instructions to edit it.
                                 </HoverCardContent>
                               </HoverCard>
-                              <TabsList className="grid w-full grid-cols-3">
+                              <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="complete">
                                   <span className="sr-only">Map</span>
                                   <FaGlobeAmericas className="h-5 w-5" />
                                 </TabsTrigger>
                                 <TabsTrigger value="insert">
                                   <span className="sr-only">Location</span>
-                                  <AiFillNotification className="h-5 w-5" />
-                                </TabsTrigger>
-                                <TabsTrigger value="edit">
-                                  <span className="sr-only">Chat</span>
                                   <IoChatbox className="h-5 w-5" />
                                 </TabsTrigger>
                               </TabsList>
