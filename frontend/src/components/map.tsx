@@ -69,8 +69,8 @@ import { FaMapMarkedAlt } from "react-icons/fa";
 import { MdPhotoCamera } from "react-icons/md";
 import { SiGooglemaps } from "react-icons/si";
 
-const Map = ({ initialPosition }) => {
-  const [users, setUsers] = useState([]);
+const Map = () => {
+  const [groups, setGroups] = useState([]);
   const [jotihuntGroups, setJotihuntGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
@@ -411,8 +411,9 @@ const Map = ({ initialPosition }) => {
         <MapContainer
           center={centerOfNetherlands}
           zoom={10}
+          zoomControl={false}
           ref={setMap}
-          style={{ height: "80vh", width: "100%", borderRadius: "0.75rem" }}
+          style={{ height: "100vh", width: "100%" }}
         >
           <LayersControl position="topright">
             <LayersControl.BaseLayer checked name="OpenStreetMap">
