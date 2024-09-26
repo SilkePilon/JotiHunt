@@ -1,337 +1,303 @@
-# Location Sharing Backend
+# Jotihunt Backend
 
-This is the backend service for the Location Sharing application. It provides API endpoints for saving and retrieving location data using SQLite3 as the database.
+This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-world game where participants complete tasks, solve hints, and follow live updates. This backend provides APIs to retrieve new game data (news, hints, and assignments) and enables users to share their live location, which can be displayed to other users.
+
+## Features
+
+- **API for fetching game data**: News, hints, and assignments are fetched from Jotihunt's public API and stored in the local database.
+- **Real-time updates**: Game data is automatically updated every minute.
+- **Location sharing**: Users can share their live location, which is saved in the database and can be displayed to other players.
+
+---
 
 ## Table of Contents
 
+- [About](#about)
 - [Installation](#installation)
 - [Usage](#usage)
-- [How It Works](#how-it-works)
-- [API Documentation](#api-documentation)
+- [API Endpoints](#api-endpoints)
+  - [Get Data](#get-data)
   - [Save Location](#save-location)
-  - [Get Location](#get-location)
-- [Code Examples](#code-examples)
+  - [Get Locations](#get-locations)
+  - [Get Content](#get-content)
+  - [Get Stats](#get-stats)
+- [Testing API Endpoints](#testing-api-endpoints)
 - [Contributing](#contributing)
-- [License](#license)
+
+---
+
+## About
+
+The Jotihunt Backend provides a set of RESTful APIs to fetch game data and allow users to share their location. The game data includes:
+
+- **News**: General updates related to the game.
+- **Hints**: Hints provided during the game that players need to solve.
+- **Assignments**: Tasks players need to complete.
+
+Additionally, players can submit their current GPS location to the server, and this information is stored and can be accessed by other players.
+
+---
 
 ## Installation
 
 1. Clone the repository:
 
-   ```
-   git clone https://github.com/yourusername/location-sharing-backend.git
+   ```bash
+   git clone https://github.com/your-username/jotihunt-backend.git
    ```
 
-2. Install dependencies:
+2. Install the dependencies:
 
-   ```
-   cd location-sharing-backend
+   ```bash
+   cd jotihunt-backend
    npm install
    ```
 
-3. Set up environment variables:
-   Create a `.env` file in the root directory and add the following:
+3. Run the server:
 
-   ```
-   PORT=5000
-   DB_PATH=./database.sqlite
-   ```
-
-4. Initialize the SQLite database:
-
-   ```
-   npm run init-db
-   ```
-
-5. Start the server:
-   ```
+   ```bash
    npm start
    ```
 
+4. The server will start at `http://localhost:5000`.
+
+5. Ensure your SQLite databases (`main.db` and `content.db`) are set up correctly. The database schemas are initialized automatically when the server starts.
+
+---
+
 ## Usage
 
-The server will start running on `http://localhost:5000` (or the port specified in your environment variables).
+Once the server is running, you can interact with the API through `HTTP` requests.
 
-## How It Works
+### Node.js Example
 
-The Location Sharing Backend is built using Node.js and Express.js, with SQLite3 as the database. Here's an overview of how it works:
+Here’s how you can retrieve game data (e.g., news) using Node.js:
 
-1. **Database Setup**: The application uses SQLite3, a lightweight, file-based relational database. The database file is created and initialized with the necessary table structure when you run the `init-db` script.
+<details>
+<summary>Node.js Example</summary>
 
-2. **User Identification**: Each user is assigned a unique identifier when they first use the application. This identifier is stored in the client's session storage and sent with each location update.
+```javascript
+const axios = require("axios");
 
-3. **Location Updates**: The frontend application periodically sends the user's current location to the backend using the `/api/save-location` endpoint. This update includes the user's identifier, name, description, and coordinates.
+async function fetchData() {
+  try {
+    const response = await axios.get("http://localhost:5000/api/data/news");
+    console.log("News Data:", response.data);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+  }
+}
 
-4. **Data Storage**: When a location update is received, the backend saves or updates the information in the SQLite database. If it's a new user, a new row is inserted; otherwise, the existing row is updated with the new location and timestamp.
+fetchData();
+```
 
-5. **Location Retrieval**: Other users can fetch the latest location of a specific user by making a GET request to the `/api/get-location/:id` endpoint, where `:id` is the unique identifier of the user whose location they want to retrieve.
+</details>
 
-6. **Background Sync**: The frontend uses the Background Sync API to ensure that location updates are sent even when the user's device has an unstable internet connection. If an update fails to send, it's queued and retried when the connection is restored.
+### React Example
 
-7. **Real-time Updates**: While not implemented in the current version, the system is designed to be easily extendable to support real-time updates using WebSockets or Server-Sent Events.
+Here’s how you can display data in a React component:
 
-8. **Error Handling**: The backend includes robust error handling to manage invalid inputs, database errors, and other potential issues, ensuring a smooth user experience.
+<details>
+<summary>React Example</summary>
 
-9. **Data Persistence**: SQLite3 stores all data in a single file, making it easy to backup, move, or restore the entire database as needed.
+```javascript
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-## API Documentation
+const NewsList = () => {
+  const [news, setNews] = useState([]);
 
-The Location Sharing Backend provides the following API endpoints:
+  useEffect(() => {
+    async function fetchNews() {
+      try {
+        const response = await axios.get("http://localhost:5000/api/data/news");
+        setNews(response.data);
+      } catch (error) {
+        console.error("Error fetching news:", error);
+      }
+    }
+
+    fetchNews();
+  }, []);
+
+  return (
+    <div>
+      <h2>News</h2>
+      <ul>
+        {news.map((item) => (
+          <li key={item.id}>{item.title}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default NewsList;
+```
+
+</details>
+
+---
+
+## API Endpoints
+
+### Get Data
+
+- **Endpoint**: `/api/data/:type`
+- **Method**: `GET`
+- **Description**: Retrieves game data (news, hints, or assignments).
+
+  - `:type`: Can be one of `news`, `hints`, or `assignments`.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/data/news
+```
+
+#### Example Response:
+
+```json
+[
+  {
+    "id": 1,
+    "title": "First News",
+    "type": "news",
+    "publish_at": "2024-09-23T10:00:00Z",
+    "retrieved_at": "2024-09-23T10:01:00Z",
+    "assignedTo": null,
+    "completed": 0,
+    "reviewed": 0,
+    "points": 0
+  }
+]
+```
 
 ### Save Location
 
-Saves or updates a user's location.
+- **Endpoint**: `/api/save-location`
+- **Method**: `POST`
+- **Description**: Allows users to save or update their current location.
 
-- **URL:** `/api/save-location`
-- **Method:** `POST`
-- **Content-Type:** `application/json`
+#### Example Request:
 
-#### Request Body
+```bash
+POST http://localhost:5000/api/save-location
+```
 
-| Field       | Type   | Description                            |
-| ----------- | ------ | -------------------------------------- |
-| id          | string | Unique identifier for the user         |
-| name        | string | Name of the location or user           |
-| description | string | Description of the location or purpose |
-| latitude    | number | Latitude coordinate                    |
-| longitude   | number | Longitude coordinate                   |
-
-#### Example Request
+#### Request Body:
 
 ```json
-POST /api/save-location
-Content-Type: application/json
-
 {
-  "id": "user_1234567890",
+  "id": "user123",
   "name": "John Doe",
-  "description": "Delivery driver en route",
-  "latitude": 37.7749,
-  "longitude": -122.4194
+  "description": "At the park",
+  "latitude": 52.3676,
+  "longitude": 4.9041
 }
 ```
 
-#### Success Response
-
-- **Code:** 200 OK
-- **Content:**
+#### Example Response:
 
 ```json
 {
-  "message": "Location saved successfully",
-  "data": {
-    "id": "user_1234567890",
+  "message": "Location created successfully"
+}
+```
+
+### Get Locations
+
+- **Endpoint**: `/api/get-locations`
+- **Method**: `GET`
+- **Description**: Retrieves all saved locations from the database.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/get-locations
+```
+
+#### Example Response:
+
+```json
+[
+  {
+    "id": "user123",
     "name": "John Doe",
-    "description": "Delivery driver en route",
-    "latitude": 37.7749,
-    "longitude": -122.4194,
-    "timestamp": "2024-09-26T14:30:00.000Z"
+    "description": "At the park",
+    "latitude": 52.3676,
+    "longitude": 4.9041,
+    "timestamp": "2024-09-23T10:01:00Z"
   }
-}
+]
 ```
 
-#### Error Response
+### Get Content
 
-- **Code:** 400 Bad Request
-- **Content:**
+- **Endpoint**: `/api/content/:id`
+- **Method**: `GET`
+- **Description**: Retrieves the content message of a specific item by ID.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/content/1
+```
+
+#### Example Response:
 
 ```json
 {
-  "error": "Invalid latitude or longitude"
+  "message": "This is the content for item 1"
 }
 ```
 
-### Get Location
+### Get Stats
 
-Retrieves the latest location for a specific user.
+- **Endpoint**: `/api/stats`
+- **Method**: `GET`
+- **Description**: Retrieves general statistics about the game data, such as total items, completed items, and points.
 
-- **URL:** `/api/get-location/:id`
-- **Method:** `GET`
+#### Example Request:
 
-#### URL Parameters
-
-| Parameter | Type   | Description                    |
-| --------- | ------ | ------------------------------ |
-| id        | string | Unique identifier for the user |
-
-#### Example Request
-
-```
-GET /api/get-location/user_1234567890
+```bash
+GET http://localhost:5000/api/stats
 ```
 
-#### Success Response
-
-- **Code:** 200 OK
-- **Content:**
+#### Example Response:
 
 ```json
 {
-  "id": "user_1234567890",
-  "name": "John Doe",
-  "description": "Delivery driver en route",
-  "latitude": 37.7749,
-  "longitude": -122.4194,
-  "timestamp": "2024-09-26T14:30:00.000Z"
+  "totalItems": 10,
+  "itemsByType": {
+    "news": 5,
+    "hint": 3,
+    "assignment": 2
+  },
+  "completedItems": 4,
+  "reviewedItems": 3,
+  "totalPoints": 50
 }
 ```
 
-#### Error Response
+---
 
-- **Code:** 404 Not Found
-- **Content:**
+## Testing API Endpoints
 
-```json
-{
-  "error": "Location not found for the given id"
-}
+You can run a test on all the API endpoints using the `/api/test` endpoint. This will check that the data, content, and stats endpoints are working correctly.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/test
 ```
 
-## Code Examples
-
-<details>
-<summary>Click to expand: Saving a location</summary>
-
-```javascript
-async function saveLocation(userData) {
-  try {
-    const response = await fetch("http://localhost:5000/api/save-location", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to save location");
-    }
-
-    const data = await response.json();
-    console.log("Location saved:", data);
-    return data;
-  } catch (error) {
-    console.error("Error saving location:", error);
-    throw error;
-  }
-}
-
-// Usage
-const userData = {
-  id: "user_1234567890",
-  name: "John Doe",
-  description: "Delivery driver en route",
-  latitude: 37.7749,
-  longitude: -122.4194,
-};
-
-saveLocation(userData)
-  .then((result) => console.log("Save successful:", result))
-  .catch((error) => console.error("Save failed:", error));
-```
-
-</details>
-
-<details>
-<summary>Click to expand: Retrieving a location</summary>
-
-```javascript
-async function getLocation(userId) {
-  try {
-    const response = await fetch(
-      `http://localhost:5000/api/get-location/${userId}`
-    );
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error("Location not found");
-      }
-      throw new Error("Failed to retrieve location");
-    }
-
-    const data = await response.json();
-    console.log("Location retrieved:", data);
-    return data;
-  } catch (error) {
-    console.error("Error retrieving location:", error);
-    throw error;
-  }
-}
-
-// Usage
-const userId = "user_1234567890";
-
-getLocation(userId)
-  .then((location) => console.log("Retrieved location:", location))
-  .catch((error) => console.error("Retrieval failed:", error));
-```
-
-</details>
-
-<details>
-<summary>Click to expand: Continuous location updates</summary>
-
-```javascript
-function startLocationUpdates(userId, updateInterval = 120000) {
-  let watchId;
-
-  function updateLocation(position) {
-    const { latitude, longitude } = position.coords;
-    const userData = {
-      id: userId,
-      name: "John Doe", // This should be stored/retrieved as needed
-      description: "Delivery driver en route", // This should be stored/retrieved as needed
-      latitude,
-      longitude,
-    };
-
-    saveLocation(userData)
-      .then(() => console.log("Location updated successfully"))
-      .catch((error) => console.error("Failed to update location:", error));
-  }
-
-  function handleError(error) {
-    console.error("Error getting location:", error.message);
-  }
-
-  if ("geolocation" in navigator) {
-    watchId = navigator.geolocation.watchPosition(updateLocation, handleError, {
-      enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 0,
-    });
-  } else {
-    console.error("Geolocation is not supported by this browser.");
-  }
-
-  // Periodically update location even if the device hasn't moved
-  const intervalId = setInterval(() => {
-    navigator.geolocation.getCurrentPosition(updateLocation, handleError);
-  }, updateInterval);
-
-  // Return a function to stop updates
-  return () => {
-    if (watchId) navigator.geolocation.clearWatch(watchId);
-    clearInterval(intervalId);
-  };
-}
-
-// Usage
-const userId = "user_1234567890";
-const stopUpdates = startLocationUpdates(userId);
-
-// To stop updates later:
-// stopUpdates();
-```
-
-</details>
-
-These code examples demonstrate how to interact with the backend API and implement continuous location updates on the client side. They can be adapted and integrated into your frontend application as needed.
+---
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Feel free to contribute to this project by submitting issues or pull requests.
 
-## License
+---
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is built using `Express.js` and `SQLite3` for managing the backend, while data is fetched from Jotihunt's official API using `Axios`. The backend is designed to automatically retrieve and store game data every minute, allowing for real-time updates during gameplay.
