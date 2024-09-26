@@ -527,7 +527,7 @@ export default function PlaygroundPage() {
                       {isMounted && <MapWithNoSSR classname="max-h-1.5" />}
                     </div>
                   </TabsContent>
-                  <TabsContent value="insert" className="mt-0 border-0 p-0">
+                  <TabsContent value="de " className="mt-0 border-0 p-0">
                     <div className="flex flex-col space-y-4">
                       <Drawer>
                         <DrawerTrigger asChild>

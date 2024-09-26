@@ -82,24 +82,30 @@ async function updateDatabase() {
   const timestamp = new Date().toISOString();
 
   for (const item of jotihuntData) {
-    const newItem = {
-      id: item.id,
-      title: item.title,
-      type: item.type,
-      publish_at: item.publish_at,
-      retrieved_at: timestamp,
-      assignedTo: null,
-      completed: 0,
-      reviewed: 0,
-      points: 0,
-    };
-
     // Check if the item type is valid
     const validTypes = ["news", "hint", "assignment"];
     if (!validTypes.includes(item.type)) {
       console.warn(`Skipping item with invalid type: ${item.type}`);
       continue;
     }
+
+    // Check if the item already exists
+    const existingItem = await mainDb.get(
+      "SELECT * FROM items WHERE id = ?",
+      item.id
+    );
+
+    const newItem = {
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      publish_at: item.publish_at,
+      retrieved_at: timestamp,
+      assignedTo: existingItem ? existingItem.assignedTo : null,
+      completed: existingItem ? existingItem.completed : 0,
+      reviewed: existingItem ? existingItem.reviewed : 0,
+      points: existingItem ? existingItem.points : 0,
+    };
 
     // Insert or update item in main database
     await mainDb.run(
@@ -287,14 +293,22 @@ app.get("/api/stats", async (req, res) => {
 
 // Updated test endpoint
 app.get("/api/test", async (req, res) => {
+  let originalItem = null;
+  let createdLocationId = null;
+
   try {
     const testResults = {
       dataEndpoints: {},
       contentEndpoint: null,
       statsEndpoint: null,
+      updateEndpoint: null,
+      locationEndpoints: {
+        saveLocation: null,
+        getLocations: null,
+      },
     };
 
-    // Test data endpoints with random items
+    // Test data endpoints
     for (const type of ["news", "hints", "assignments"]) {
       const response = await axios.get(
         `http://localhost:${PORT}/api/data/${type}`
@@ -310,8 +324,8 @@ app.get("/api/test", async (req, res) => {
       };
     }
 
-    // Test content endpoint with a random item
-    const allItems = await mainDb.all("SELECT id FROM items");
+    // Test content endpoint
+    const allItems = await mainDb.all("SELECT * FROM items");
     if (allItems.length > 0) {
       const randomItem = allItems[Math.floor(Math.random() * allItems.length)];
       const response = await axios.get(
@@ -332,6 +346,61 @@ app.get("/api/test", async (req, res) => {
       data: statsResponse.data,
     };
 
+    // Test update endpoint
+    if (allItems.length > 0) {
+      const randomItem = allItems[Math.floor(Math.random() * allItems.length)];
+      originalItem = { ...randomItem };
+      const updateData = {
+        assignedTo: "Test User",
+        points: 5,
+        reviewed: 1,
+        completed: 0,
+      };
+      const updateResponse = await axios.put(
+        `http://localhost:${PORT}/api/update/${randomItem.id}`,
+        updateData
+      );
+      testResults.updateEndpoint = {
+        status: updateResponse.status,
+        dataReceived:
+          updateResponse.status === 200 && updateResponse.data !== null,
+        updatedItem: updateResponse.data.item,
+      };
+    }
+
+    // Test save location endpoint
+    const locationData = {
+      id: `test-location-${Date.now()}`,
+      name: "Test Location",
+      description: "This is a test location",
+      latitude: 52.3676,
+      longitude: 4.9041,
+    };
+    const saveLocationResponse = await axios.post(
+      `http://localhost:${PORT}/api/save-location`,
+      locationData
+    );
+    testResults.locationEndpoints.saveLocation = {
+      status: saveLocationResponse.status,
+      message: saveLocationResponse.data.message,
+    };
+    createdLocationId = locationData.id;
+
+    // Test get locations endpoint
+    const getLocationsResponse = await axios.get(
+      `http://localhost:${PORT}/api/get-locations`
+    );
+    testResults.locationEndpoints.getLocations = {
+      status: getLocationsResponse.status,
+      dataReceived: getLocationsResponse.data.length > 0,
+      randomLocation:
+        getLocationsResponse.data.length > 0
+          ? getLocationsResponse.data[
+              Math.floor(Math.random() * getLocationsResponse.data.length)
+            ]
+          : null,
+    };
+
     res.json({
       message: "All endpoints tested",
       results: testResults,
@@ -339,6 +408,39 @@ app.get("/api/test", async (req, res) => {
   } catch (error) {
     console.error("Error during test:", error);
     res.status(500).json({ error: "Test failed", details: error.message });
+  } finally {
+    // Cleanup operations
+    try {
+      // Revert changes made to the item
+      if (originalItem) {
+        await mainDb.run(
+          `
+          UPDATE items
+          SET assignedTo = ?, points = ?, reviewed = ?, completed = ?
+          WHERE id = ?
+        `,
+          [
+            originalItem.assignedTo,
+            originalItem.points,
+            originalItem.reviewed,
+            originalItem.completed,
+            originalItem.id,
+          ]
+        );
+      }
+
+      // Delete the test location
+      if (createdLocationId) {
+        await mainDb.run(
+          "DELETE FROM locations WHERE id = ?",
+          createdLocationId
+        );
+      }
+
+      console.log("Test cleanup completed successfully");
+    } catch (cleanupError) {
+      console.error("Error during test cleanup:", cleanupError);
+    }
   }
 });
 
@@ -388,6 +490,59 @@ app.get("/database", async (req, res) => {
     res
       .status(500)
       .json({ error: "Database export failed", details: error.message });
+  }
+});
+
+app.put("/api/update/:id", async (req, res) => {
+  const { id } = req.params;
+  const { assignedTo, points, reviewed, completed } = req.body;
+
+  try {
+    // Validate input
+    if (typeof assignedTo !== "string" && assignedTo !== null) {
+      return res.status(400).json({ error: "Invalid assignedTo value" });
+    }
+    if (!Number.isInteger(points) || points < 0) {
+      return res.status(400).json({ error: "Invalid points value" });
+    }
+    if (![0, 1].includes(reviewed)) {
+      return res.status(400).json({ error: "Invalid reviewed value" });
+    }
+    if (![0, 1].includes(completed)) {
+      return res.status(400).json({ error: "Invalid completed value" });
+    }
+
+    // Check if the item exists
+    const item = await mainDb.get("SELECT * FROM items WHERE id = ?", id);
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    // Update the item
+    await mainDb.run(
+      `
+      UPDATE items
+      SET assignedTo = ?, points = ?, reviewed = ?, completed = ?
+      WHERE id = ?
+    `,
+      [assignedTo, points, reviewed, completed, id]
+    );
+
+    // Fetch the updated item
+    const updatedItem = await mainDb.get(
+      "SELECT * FROM items WHERE id = ?",
+      id
+    );
+
+    res.json({
+      message: "Item updated successfully",
+      item: updatedItem,
+    });
+  } catch (error) {
+    console.error("Error updating item:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to update item", details: error.message });
   }
 });
 

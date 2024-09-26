@@ -7,6 +7,8 @@ This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-
 - **API for fetching game data**: News, hints, and assignments are fetched from Jotihunt's public API and stored in the local database.
 - **Real-time updates**: Game data is automatically updated every minute.
 - **Location sharing**: Users can share their live location, which is saved in the database and can be displayed to other players.
+- **Visual database**: View a visual representation of the live database.
+- **API testing**: Run tests on all API endpoints to ensure proper functionality.
 
 ---
 
@@ -21,7 +23,9 @@ This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-
   - [Get Locations](#get-locations)
   - [Get Content](#get-content)
   - [Get Stats](#get-stats)
-- [Testing API Endpoints](#testing-api-endpoints)
+  - [Update Item](#update-item)
+  - [Visual Database](#visual-database)
+  - [Test API Endpoints](#test-api-endpoints)
 - [Contributing](#contributing)
 
 ---
@@ -71,10 +75,7 @@ Once the server is running, you can interact with the API through `HTTP` request
 
 ### Node.js Example
 
-Here’s how you can retrieve game data (e.g., news) using Node.js:
-
-<details>
-<summary>Node.js Example</summary>
+Here's how you can retrieve game data (e.g., news) using Node.js:
 
 ```javascript
 const axios = require("axios");
@@ -91,14 +92,9 @@ async function fetchData() {
 fetchData();
 ```
 
-</details>
-
 ### React Example
 
-Here’s how you can display data in a React component:
-
-<details>
-<summary>React Example</summary>
+Here's how you can display data in a React component:
 
 ```javascript
 import React, { useState, useEffect } from "react";
@@ -134,8 +130,6 @@ const NewsList = () => {
 
 export default NewsList;
 ```
-
-</details>
 
 ---
 
@@ -280,11 +274,53 @@ GET http://localhost:5000/api/stats
 }
 ```
 
----
+### Update Item
 
-## Visual database
+- **Endpoint**: `/api/update/:id`
+- **Method**: `PUT`
+- **Description**: Updates a specific item's details (assigned user, points, review status, completion status).
 
-You can view a visual version of the live database on the API endpoint `/database`. This will display a `json crack` version of the database.
+#### Example Request:
+
+```bash
+PUT http://localhost:5000/api/update/1
+```
+
+#### Request Body:
+
+```json
+{
+  "assignedTo": "User1",
+  "points": 10,
+  "reviewed": 1,
+  "completed": 1
+}
+```
+
+#### Example Response:
+
+```json
+{
+  "message": "Item updated successfully",
+  "item": {
+    "id": 1,
+    "title": "First News",
+    "type": "news",
+    "publish_at": "2024-09-23T10:00:00Z",
+    "retrieved_at": "2024-09-23T10:01:00Z",
+    "assignedTo": "User1",
+    "completed": 1,
+    "reviewed": 1,
+    "points": 10
+  }
+}
+```
+
+### Visual Database
+
+- **Endpoint**: `/database`
+- **Method**: `GET`
+- **Description**: Displays a visual representation of the live database using JSON Crack.
 
 #### Example Request:
 
@@ -292,16 +328,40 @@ You can view a visual version of the live database on the API endpoint `/databas
 GET http://localhost:5000/database
 ```
 
----
+This will return an HTML page with an embedded JSON Crack visualization of the database.
 
-## Testing API Endpoints
+### Test API Endpoints
 
-You can run a test on all the API endpoints using the `/api/test` endpoint. This will check that the data, content, and stats endpoints are working correctly.
+- **Endpoint**: `/api/test`
+- **Method**: `GET`
+- **Description**: Runs tests on all API endpoints to ensure they are functioning correctly.
 
 #### Example Request:
 
 ```bash
 GET http://localhost:5000/api/test
+```
+
+#### Example Response:
+
+```json
+{
+  "message": "All endpoints tested",
+  "results": {
+    "dataEndpoints": {
+      "news": { "status": 200, "dataReceived": true },
+      "hints": { "status": 200, "dataReceived": true },
+      "assignments": { "status": 200, "dataReceived": true }
+    },
+    "contentEndpoint": { "status": 200, "dataReceived": true },
+    "statsEndpoint": { "status": 200, "data": { ... } },
+    "updateEndpoint": { "status": 200, "dataReceived": true },
+    "locationEndpoints": {
+      "saveLocation": { "status": 200, "message": "Location created successfully" },
+      "getLocations": { "status": 200, "dataReceived": true }
+    }
+  }
+}
 ```
 
 ---
