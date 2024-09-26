@@ -289,7 +289,7 @@ You can view a visual version of the live database on the API endpoint `/databas
 #### Example Request:
 
 ```bash
-GET http://localhost:5000/api/test
+GET http://localhost:5000/database
 ```
 
 ---
