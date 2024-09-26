@@ -1,1 +1,3 @@
 when asking for opdrachten only provide the title etc and not the whole message content
+save api response times to later show in a graph
+use AI to explain how to better complete hints and assignments

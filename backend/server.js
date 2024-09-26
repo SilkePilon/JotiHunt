@@ -20,14 +20,9 @@ const CONTENT_DB_PATH = path.join(__dirname, "content.db");
 let mainDb, contentDb;
 
 // Initialize databases
-async function initDatabases() {
+async function initDatabase() {
   mainDb = await open({
     filename: MAIN_DB_PATH,
-    driver: sqlite3.Database,
-  });
-
-  contentDb = await open({
-    filename: CONTENT_DB_PATH,
     driver: sqlite3.Database,
   });
 
@@ -45,14 +40,13 @@ async function initDatabases() {
     )
   `);
 
-  await contentDb.exec(`
+  await mainDb.exec(`
     CREATE TABLE IF NOT EXISTS content (
       id INTEGER PRIMARY KEY,
       message TEXT
     )
   `);
 
-  // New table for location data
   await mainDb.exec(`
     CREATE TABLE IF NOT EXISTS locations (
       id TEXT PRIMARY KEY,
@@ -127,8 +121,8 @@ async function updateDatabase() {
       ]
     );
 
-    // Store message content in content database
-    await contentDb.run(
+    // Store message content in content table
+    await mainDb.run(
       "INSERT OR REPLACE INTO content (id, message) VALUES (?, ?)",
       [item.id, JSON.stringify(item.message)]
     );
@@ -247,7 +241,7 @@ app.get("/api/get-locations", async (req, res) => {
 app.get("/api/content/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await contentDb.get(
+    const result = await mainDb.get(
       "SELECT message FROM content WHERE id = ?",
       id
     );
@@ -262,6 +256,36 @@ app.get("/api/content/:id", async (req, res) => {
 });
 
 // Stats API
+app.get("/api/stats", async (req, res) => {
+  try {
+    const stats = {
+      totalItems: 0,
+      itemsByType: {},
+      completedItems: 0,
+      reviewedItems: 0,
+      totalPoints: 0,
+    };
+
+    const types = ["news", "hint", "assignment"];
+    for (const type of types) {
+      const items = await mainDb.all(
+        "SELECT * FROM items WHERE type = ?",
+        type
+      );
+      stats.totalItems += items.length;
+      stats.itemsByType[type] = items.length;
+      stats.completedItems += items.filter((item) => item.completed).length;
+      stats.reviewedItems += items.filter((item) => item.reviewed).length;
+      stats.totalPoints += items.reduce((sum, item) => sum + item.points, 0);
+    }
+
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: "Error retrieving stats" });
+  }
+});
+
+// Updated test endpoint
 app.get("/api/stats", async (req, res) => {
   try {
     const stats = {
@@ -448,7 +472,7 @@ app.get("/api/test", async (req, res) => {
 app.get("/database", async (req, res) => {
   try {
     const exporter = new SqliteToJson({
-      client: new sqlite3.Database("main.db"),
+      client: new sqlite3.Database(MAIN_DB_PATH),
     });
 
     exporter.all(function (err, all) {
@@ -547,7 +571,7 @@ app.put("/api/update/:id", async (req, res) => {
 });
 
 // Initialize databases and start server
-initDatabases().then(() => {
+initDatabase().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     updateDatabase(); // Initial data fetch
