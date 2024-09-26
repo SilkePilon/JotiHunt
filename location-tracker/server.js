@@ -5,6 +5,8 @@ const axios = require("axios");
 const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
 const { open } = require("sqlite");
+const SqliteToJson = require("sqlite-to-json");
+const { stringify } = require("querystring");
 
 const app = express();
 const PORT = 5000;
@@ -337,6 +339,55 @@ app.get("/api/test", async (req, res) => {
   } catch (error) {
     console.error("Error during test:", error);
     res.status(500).json({ error: "Test failed", details: error.message });
+  }
+});
+
+// Server-side code (Express route)
+app.get("/database", async (req, res) => {
+  try {
+    const exporter = new SqliteToJson({
+      client: new sqlite3.Database("main.db"),
+    });
+
+    exporter.all(function (err, all) {
+      if (err) {
+        console.error("Error exporting database:", err);
+        res
+          .status(500)
+          .json({ error: "Failed to export database", details: err.message });
+        return;
+      }
+
+      // Send HTML response with embedded JSON data
+      res.send(`
+        <section>
+          <!-- JSON Crack iframe embed goes here -->
+          <iframe style="position: absolute;top: 0;left:0;overflow:hidden" id="jsoncrackEmbed" src="https://jsoncrack.com/widget" width="100%" height="100%"></iframe>
+        </section>
+        
+        <!-- Define the script in the response -->
+        <script>
+          const jsonCrackEmbed = document.querySelector("#jsoncrackEmbed");
+
+          // Convert the database data to JSON
+          const json = JSON.stringify(${JSON.stringify(all)});
+          
+          // Wait for the window to load before posting the message
+          const options = {
+            theme: "dark", // "light" or "dark"
+            direction: "UP", // "UP", "DOWN", "LEFT", "RIGHT"
+          };
+          window.addEventListener("load", () => {
+            jsonCrackEmbed.contentWindow.postMessage({ json, options }, "*");
+          });
+        </script>
+      `);
+    });
+  } catch (error) {
+    console.error("Error during database export:", error);
+    res
+      .status(500)
+      .json({ error: "Database export failed", details: error.message });
   }
 });
 

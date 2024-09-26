@@ -282,6 +282,18 @@ GET http://localhost:5000/api/stats
 
 ---
 
+## Visual database
+
+You can view a visual version of the live database on the API endpoint `/database`. This will display a `json crack` version of the database.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/test
+```
+
+---
+
 ## Testing API Endpoints
 
 You can run a test on all the API endpoints using the `/api/test` endpoint. This will check that the data, content, and stats endpoints are working correctly.
