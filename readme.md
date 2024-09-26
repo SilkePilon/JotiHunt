@@ -43,13 +43,13 @@ Additionally, players can submit their current GPS location to the server, and t
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/jotihunt-backend.git
+   git clone https://github.com/SilkePilon/OpenJotiHuntMap.git
    ```
 
 2. Install the dependencies:
 
    ```bash
-   cd jotihunt-backend
+   cd OpenJotiHuntMap
    npm install
    ```
 
