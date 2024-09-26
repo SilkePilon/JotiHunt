@@ -10,6 +10,7 @@ import {
   Popup,
   useMap,
 } from "react-leaflet";
+import { MdAccessTimeFilled } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import "leaflet/dist/leaflet.css";
@@ -69,7 +70,7 @@ import { MdPhotoCamera } from "react-icons/md";
 import { SiGooglemaps } from "react-icons/si";
 
 const Map = ({ initialPosition }) => {
-  const [groups, setGroups] = useState([]);
+  const [users, setUsers] = useState([]);
   const [jotihuntGroups, setJotihuntGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
@@ -116,15 +117,16 @@ const Map = ({ initialPosition }) => {
   };
 
   const fetchAllLocations = () => {
-    fetch("https://192.168.2.14:5000/api/get-locations")
+    fetch("http://localhost:5000/api/get-locations")
       .then((response) => response.json())
       .then((data) => {
-        setGroups(
+        setUsers(
           Object.entries(data).map(([name, location]) => ({
-            name,
+            name: location.name,
             latitude: parseFloat(location.latitude),
             longitude: parseFloat(location.longitude),
             description: location.description || "",
+            timestamp: location.timestamp,
           }))
         );
       })
@@ -133,9 +135,9 @@ const Map = ({ initialPosition }) => {
 
   useEffect(() => {
     fetchAllLocations();
-    const interval = setInterval(fetchAllLocations, 120000);
+    const interval = setInterval(fetchAllLocations, 30000);
     return () => clearInterval(interval);
-  }, [isUserNameSubmitted]);
+  }, []);
 
   useEffect(() => {
     fetch("https://jotihunt.nl/api/2.0/subscriptions")
@@ -161,7 +163,7 @@ const Map = ({ initialPosition }) => {
   const handleNameSubmit = (e) => {
     e.preventDefault();
     if (userName && userLocation) {
-      fetch("https://192.168.2.14:5000/api/save-location", {
+      fetch("https://localhost:5000/api/save-location", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -187,6 +189,21 @@ const Map = ({ initialPosition }) => {
     const lightness = Math.floor(Math.random() * 11) + 45; // 45-55%
 
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  };
+
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+
+    // Format the date (you can adjust this to your liking)
+    const options = {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    };
+
+    return date.toLocaleString("en-US", options);
   };
 
   const handleSearch = async () => {
@@ -519,23 +536,99 @@ const Map = ({ initialPosition }) => {
 
           <SearchResultCircle />
 
-          {groups.map((group, index) => (
-            <Circle
-              key={index}
-              center={[group.latitude, group.longitude]}
-              radius={2}
-              pathOptions={{ fillColor: getRandomColor(), color: "black" }}
-              eventHandlers={{
-                click: () => setSelectedGroup(group),
-              }}
-            >
-              <Popup className="request-popup">
-                <p>Name: {group.name}</p>
-                <p>Description: {group.description}</p>
-                <p>Latitude: {group.latitude}</p>
-                <p>Longitude: {group.longitude}</p>
-              </Popup>
-            </Circle>
+          {users.map((user, index) => (
+            <React.Fragment key={index}>
+              <Circle
+                center={[parseFloat(user.latitude), parseFloat(user.longitude)]}
+                radius={200}
+                pathOptions={{ fillColor: "black", color: "black" }}
+              >
+                <Popup className="request-popup" minWidth={280} maxWidth={280}>
+                  <Card className="w-full h-full shadow-none">
+                    <CardHeader className="p-4 pb-0">
+                      <CardTitle>{user.name || "Unregistered user"}</CardTitle>
+                      {/* latitude: parseFloat(location.latitude), longitude:
+                      parseFloat(location.longitude), description:
+                      location.description || "", */}
+                      <CardDescription>
+                        <div className="space-y-2">
+                          {user.name && (
+                            <>
+                              <strong>
+                                {user.name || "Unregistered user"}
+                                {""} is sharing his/her location.<br></br>This
+                                location is acuate between 20 and 400m.
+                              </strong>
+                              <br></br>
+                              <br></br>
+                              <strong>
+                                {user.name || "Unregistered user"}&apos;s
+                                description:
+                              </strong>
+                              <br></br>
+                              {user.description || "No description provided."}
+                              <br></br>
+                            </>
+                          )}
+
+                          <ul className="space-y-2">
+                            <li className="flex items-center">
+                              <FaLocationDot className="mr-2" />
+                              <span>
+                                {user.latitude}, {user.longitude}
+                              </span>
+                            </li>
+                            <li className="flex items-center">
+                              <MdAccessTimeFilled className="mr-2" />
+                              <span>{formatDate(user.timestamp)}</span>
+                            </li>
+                            {/* {group.area && (
+                              <li className="flex items-center">
+                                <FaMapMarkedAlt className="mr-2" />
+                                <span>{group.area}</span>
+                              </li>
+                            )} */}
+                            {/* <li className="flex items-center">
+                              <MdPhotoCamera className="mr-2" />
+                              <span>
+                                {group.photo_assignment_points ? 0 : 0} photo
+                                assignment points
+                              </span>
+                            </li> */}
+                          </ul>
+                        </div>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent
+                      style={{ marginTop: "10px" }}
+                      className="flex flex-row items-baseline gap-4 p-4 pt-2"
+                    >
+                      <Button className="w-full">
+                        <a
+                          style={{ color: "inherit" }}
+                          target="_blank"
+                          href={`https://www.google.nl/maps/place/${user.latitude},${user.longitude}`}
+                        >
+                          <div className="flex items-center">
+                            <SiGooglemaps className="mr-2" />
+                            <span>View on Maps</span>
+                          </div>
+                        </a>
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          map && map.closePopup();
+                        }}
+                        className="w-full"
+                        style={{ backgroundColor: "#ff6961" }}
+                      >
+                        Close
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Popup>
+              </Circle>
+            </React.Fragment>
           ))}
 
           {jotihuntGroups.map((group, index) => (

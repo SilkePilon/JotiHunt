@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useMediaQuery } from "usehooks-ts";
 import { FaLocationDot } from "react-icons/fa6";
+
 // Move LocationForm outside of PresetSave
 const LocationForm = ({
   formData,
@@ -70,12 +71,26 @@ const LocationForm = ({
 );
 
 export function PresetSave() {
+  const [identifier, setIdentifier] = useState(null);
   const { toast } = useToast();
   const [formData, setFormData] = useState({ name: "", description: "" });
   const [isOpen, setIsOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const formRef = useRef(null);
+
+  useEffect(() => {
+    const storedId = sessionStorage.getItem("locationIdentifier");
+    if (storedId) {
+      setIdentifier(storedId);
+    } else {
+      const newId = `user_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+      sessionStorage.setItem("locationIdentifier", newId);
+      setIdentifier(newId);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -85,47 +100,105 @@ export function PresetSave() {
     }
   };
 
-  const saveLocation = async (name, description) => {
-    if (!isSharing) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (position) => {
-          const { latitude, longitude } = position.coords;
-          try {
-            const response = await fetch(
-              "https://192.168.2.14:5000/api/save-location",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  name,
-                  description,
-                  latitude,
-                  longitude,
-                }),
-              }
-            );
+  if ("serviceWorker" in navigator && "SyncManager" in window) {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then(function (registration) {
+        console.log(
+          "Service Worker registered with scope:",
+          registration.scope
+        );
+      })
+      .catch(function (error) {
+        console.log("Service Worker registration failed:", error);
+      });
+  }
 
-            if (!response.ok) {
-              throw new Error("Failed to save location");
+  const saveLocation = async (name, description) => {
+    if (identifier) {
+      if (navigator.geolocation) {
+        const watchId = navigator.geolocation.watchPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+
+            // Check if latitude and longitude are valid numbers
+            if (isNaN(latitude) || isNaN(longitude)) {
+              console.error(
+                "Invalid latitude or longitude values:",
+                latitude,
+                longitude
+              );
+              toast({
+                title: "Error",
+                variant: "destructive",
+                description: "Invalid latitude or longitude. Please try again.",
+              });
+              return;
             }
 
-            console.log("Location saved successfully!");
-            toast({
-              title: "Location sharing activated!",
-              description: "Don't close this page!",
-            });
-            setIsSharing(true);
-          } catch (error) {
-            console.error("Error saving location:", error);
-            toast({
-              title: "Error saving location",
-              variant: "destructive",
-              description: `${error}`,
-            });
+            // Save location in the background
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+              navigator.serviceWorker.ready.then(async (registration) => {
+                try {
+                  // Register a sync event
+                  if ("sync" in registration) {
+                    await registration.sync.register("sync-location");
+                    console.log("Background sync registered!");
+                  } else {
+                    console.warn(
+                      "Background sync is not supported in this browser."
+                    );
+                  }
+                  console.log("Background sync registered!");
+
+                  // Send location data to the server
+                  const response = await fetch(
+                    "http://localhost:5000/api/save-location",
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        id: identifier,
+                        name,
+                        description,
+                        latitude,
+                        longitude,
+                      }),
+                    }
+                  );
+
+                  if (!response.ok) {
+                    throw new Error("Failed to save location");
+                  }
+
+                  console.log("Location saved successfully!");
+                  // toast({
+                  //   title: "Location sharing activated!",
+                  //   description: "Don't close this page!",
+                  // });
+                  setIsSharing(true);
+                } catch (error) {
+                  console.error("Error saving location:", error);
+                  toast({
+                    title: "Error saving location",
+                    variant: "destructive",
+                    description: `${error}`,
+                  });
+                }
+              });
+            }
+          },
+          (error) => {
+            console.error("Geolocation error:", error);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 300000,
+            timeout: 8000,
           }
-        });
+        );
       } else {
         alert("Geolocation is not supported by this browser.");
         toast({
@@ -158,6 +231,28 @@ export function PresetSave() {
     },
     [isDesktop]
   );
+
+  const updateLocation = useCallback(() => {
+    if (identifier) {
+      saveLocation(formData.name, formData.description);
+    }
+  }, [identifier, formData]);
+
+  const handleVisibilityChange = useCallback(() => {
+    if (!document.hidden) {
+      updateLocation();
+    }
+  }, [updateLocation]);
+
+  useEffect(() => {
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const intervalId = setInterval(updateLocation, 10000); // Update every second
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [updateLocation, handleVisibilityChange]);
 
   if (isDesktop) {
     return (
@@ -201,23 +296,26 @@ export function PresetSave() {
           <DrawerHeader className="text-left">
             <DrawerTitle>Live Location Share</DrawerTitle>
             <DrawerDescription>
-              This will share your current location every 2 minutes.
-            </DrawerDescription>
-          </DrawerHeader>
+              This will share your current location every 2 minutes.{" "}
+            </DrawerDescription>{" "}
+          </DrawerHeader>{" "}
           <div className="p-4 pb-0">
+            {" "}
             <LocationForm
               formData={formData}
               handleInputChange={handleInputChange}
               handleSubmit={handleSubmit}
               formRef={formRef}
-            />
-          </div>
+            />{" "}
+          </div>{" "}
           <DrawerFooter className="pt-2">
+            {" "}
             <DrawerClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
+              {" "}
+              <Button variant="outline">Cancel</Button>{" "}
+            </DrawerClose>{" "}
+          </DrawerFooter>{" "}
+        </DrawerContent>{" "}
       </Drawer>
     );
   }

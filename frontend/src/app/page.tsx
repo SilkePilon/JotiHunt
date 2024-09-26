@@ -60,6 +60,14 @@ import {
 export default function PlaygroundPage() {
   const [isMounted, setIsMounted] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [key, setKey] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setKey((prevKey) => prevKey + 1);
+    }, 60000); // 60000 milliseconds = 1 minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
