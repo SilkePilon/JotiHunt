@@ -11,6 +11,7 @@ This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-
 - **API testing**: Run tests on all API endpoints to ensure proper functionality.
 - **Performance monitoring**: Track response times for both Jotihunt API and our own API endpoints.
 - **AI-generated plans**: Generate plans for solving hints and assignments using AI.
+- **Live leaderboard**: View the positions of competing groups by points.
 
 ## Table of Contents
 
@@ -25,6 +26,7 @@ This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-
   - [Get Stats](#get-stats)
   - [Update Item](#update-item)
   - [Generate Plan](#generate-plan)
+  - [Get Leaderboard](#get-leaderboard)
   - [Visual Database](#visual-database)
   - [Test API Endpoints](#test-api-endpoints)
   - [Get API Response Times](#get-api-response-times)
