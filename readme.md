@@ -379,6 +379,22 @@ GET http://localhost:5000/api/leaderboard
 ]
 ```
 
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/leaderboard/alexander
+```
+
+#### Example Response:
+
+```json
+{
+  "position": 21,
+  "groupName": "alexandergroep",
+  "points": 328
+}
+```
+
 #### Error Response:
 
 If the server fails to scrape the leaderboard, the following error response will be returned:
