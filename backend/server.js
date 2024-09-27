@@ -57,18 +57,69 @@ async function initDatabase() {
       timestamp TEXT
     )
   `);
+
+  await mainDb.exec(`
+    CREATE TABLE IF NOT EXISTS jotihunt_api_response_times (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp TEXT,
+      response_time_ms REAL
+    )
+  `);
+
+  await mainDb.exec(`
+    CREATE TABLE IF NOT EXISTS our_api_response_times (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      endpoint TEXT,
+      timestamp TEXT,
+      response_time_ms REAL
+    )
+  `);
 }
 
 // Fetch data from Jotihunt API
 async function fetchJotihuntData() {
   try {
+    const startTime = performance.now();
     const response = await axios.get("https://jotihunt.nl/api/2.0/articles");
+    const endTime = performance.now();
+    const responseTimeMs = endTime - startTime;
+
+    // Record the response time in milliseconds
+    await mainDb.run(
+      `INSERT INTO jotihunt_api_response_times (timestamp, response_time_ms) VALUES (?, ?)`,
+      [new Date().toISOString(), responseTimeMs]
+    );
+
     return response.data.data;
   } catch (error) {
     console.error("Error fetching Jotihunt data:", error);
     return [];
   }
 }
+
+// Middleware to measure API response time
+function measureResponseTime(req, res, next) {
+  const startTime = performance.now();
+
+  res.on("finish", async () => {
+    const endTime = performance.now();
+    const responseTimeMs = endTime - startTime;
+
+    try {
+      await mainDb.run(
+        `INSERT INTO our_api_response_times (endpoint, timestamp, response_time_ms) VALUES (?, ?, ?)`,
+        [req.path, new Date().toISOString(), responseTimeMs]
+      );
+    } catch (error) {
+      console.error("Error recording API response time:", error);
+    }
+  });
+
+  next();
+}
+
+// Apply the middleware to all routes
+app.use(measureResponseTime);
 
 // Update database with new data
 async function updateDatabase() {
@@ -133,6 +184,110 @@ async function updateDatabase() {
 setInterval(updateDatabase, 60000); // Fetch every minute
 
 // API endpoints
+
+// New endpoint to get API response times
+app.get("/api/response-times", async (req, res) => {
+  try {
+    const jotihuntTimes = await mainDb.all(
+      "SELECT * FROM jotihunt_api_response_times ORDER BY timestamp DESC LIMIT 100"
+    );
+    const ourApiTimes = await mainDb.all(
+      "SELECT * FROM our_api_response_times ORDER BY timestamp DESC LIMIT 100"
+    );
+
+    res.json({
+      jotihuntApiTimes: jotihuntTimes,
+      ourApiTimes: ourApiTimes,
+    });
+  } catch (error) {
+    console.error("Error retrieving response times:", error);
+    res.status(500).json({ error: "Failed to retrieve response times" });
+  }
+});
+
+app.get("/api/response-time-graph", async (req, res) => {
+  try {
+    const jotihuntTimes = await mainDb.all(
+      "SELECT timestamp, response_time_ms FROM jotihunt_api_response_times ORDER BY timestamp DESC LIMIT 100"
+    );
+    const ourApiTimes = await mainDb.all(
+      "SELECT timestamp, response_time_ms FROM our_api_response_times ORDER BY timestamp DESC LIMIT 100"
+    );
+
+    // Render the HTML page with the graph
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>API Response Times Graph</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+      </head>
+      <body>
+        <canvas id="responseTimeChart" width="800" height="400"></canvas>
+        <script>
+          const jotihuntTimes = ${JSON.stringify(jotihuntTimes)};
+          const ourApiTimes = ${JSON.stringify(ourApiTimes)};
+
+          const ctx = document.getElementById('responseTimeChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              datasets: [
+                {
+                  label: 'Jotihunt API',
+                  data: jotihuntTimes.map(item => ({
+                    x: item.timestamp,
+                    y: item.response_time_ms
+                  })),
+                  borderColor: 'rgb(75, 192, 192)',
+                  tension: 0.1
+                },
+                {
+                  label: 'Our API',
+                  data: ourApiTimes.map(item => ({
+                    x: item.timestamp,
+                    y: item.response_time_ms
+                  })),
+                  borderColor: 'rgb(255, 99, 132)',
+                  tension: 0.1
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                x: {
+                  type: 'time',
+                  time: {
+                    unit: 'minute'
+                  },
+                  title: {
+                    display: true,
+                    text: 'Time'
+                  }
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: 'Response Time (ms)'
+                  }
+                }
+              }
+            }
+          });
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error("Error generating response time graph:", error);
+    res.status(500).json({ error: "Failed to generate response time graph" });
+  }
+});
 
 // Get data by type
 app.get("/api/data/:type", async (req, res) => {

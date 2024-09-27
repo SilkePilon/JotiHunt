@@ -9,8 +9,7 @@ This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-
 - **Location sharing**: Users can share their live location, which is saved in the database and can be displayed to other players.
 - **Visual database**: View a visual representation of the live database.
 - **API testing**: Run tests on all API endpoints to ensure proper functionality.
-
----
+- **Performance monitoring**: Track response times for both Jotihunt API and our own API endpoints.
 
 ## Table of Contents
 
@@ -26,9 +25,9 @@ This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-
   - [Update Item](#update-item)
   - [Visual Database](#visual-database)
   - [Test API Endpoints](#test-api-endpoints)
+  - [Get API Response Times](#get-api-response-times)
+  - [View Response Time Graph](#view-response-time-graph)
 - [Contributing](#contributing)
-
----
 
 ## About
 
@@ -39,8 +38,6 @@ The Jotihunt Backend provides a set of RESTful APIs to fetch game data and allow
 - **Assignments**: Tasks players need to complete.
 
 Additionally, players can submit their current GPS location to the server, and this information is stored and can be accessed by other players.
-
----
 
 ## Installation
 
@@ -65,9 +62,7 @@ Additionally, players can submit their current GPS location to the server, and t
 
 4. The server will start at `http://localhost:5000`.
 
-5. Ensure your SQLite databases (`main.db` and `content.db`) are set up correctly. The database schemas are initialized automatically when the server starts.
-
----
+5. Ensure your SQLite databases (`main.db`) are set up correctly. The database schemas are initialized automatically when the server starts.
 
 ## Usage
 
@@ -130,8 +125,6 @@ const NewsList = () => {
 
 export default NewsList;
 ```
-
----
 
 ## API Endpoints
 
@@ -364,7 +357,53 @@ GET http://localhost:5000/api/test
 }
 ```
 
----
+### Get API Response Times
+
+- **Endpoint**: `/api/response-times`
+- **Method**: `GET`
+- **Description**: Retrieves the response times for both the Jotihunt API and our own API endpoints.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/response-times
+```
+
+#### Example Response:
+
+```json
+{
+  "jotihuntApiTimes": [
+    {
+      "id": 1,
+      "timestamp": "2024-09-23T10:01:00Z",
+      "response_time_ms": 250.5
+    }
+  ],
+  "ourApiTimes": [
+    {
+      "id": 1,
+      "endpoint": "/api/data/news",
+      "timestamp": "2024-09-23T10:02:00Z",
+      "response_time_ms": 15.3
+    }
+  ]
+}
+```
+
+### View Response Time Graph
+
+- **Endpoint**: `/api/response-time-graph`
+- **Method**: `GET`
+- **Description**: Displays a graph of API response times for both Jotihunt API and our own API.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/response-time-graph
+```
+
+This will return an HTML page with an embedded chart showing the response times over time.
 
 ## Contributing
 
@@ -372,4 +411,4 @@ Feel free to contribute to this project by submitting issues or pull requests.
 
 ---
 
-This project is built using `Express.js` and `SQLite3` for managing the backend, while data is fetched from Jotihunt's official API using `Axios`. The backend is designed to automatically retrieve and store game data every minute, allowing for real-time updates during gameplay.
+This project is built using `Express.js` and `SQLite3` for managing the backend, while data is fetched from Jotihunt's official API using `Axios`. The backend is designed to automatically retrieve and store game data every minute, allowing for real-time updates during gameplay. It also includes performance monitoring features to track API response times.
