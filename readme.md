@@ -10,6 +10,7 @@ This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-
 - **Visual database**: View a visual representation of the live database.
 - **API testing**: Run tests on all API endpoints to ensure proper functionality.
 - **Performance monitoring**: Track response times for both Jotihunt API and our own API endpoints.
+- **AI-generated plans**: Generate plans for solving hints and assignments using AI.
 
 ## Table of Contents
 
@@ -23,6 +24,7 @@ This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-
   - [Get Content](#get-content)
   - [Get Stats](#get-stats)
   - [Update Item](#update-item)
+  - [Generate Plan](#generate-plan)
   - [Visual Database](#visual-database)
   - [Test API Endpoints](#test-api-endpoints)
   - [Get API Response Times](#get-api-response-times)
@@ -51,18 +53,27 @@ Additionally, players can submit their current GPS location to the server, and t
 
    ```bash
    cd OpenJotiHuntMap
+   cd backend
    npm install
    ```
 
-3. Run the server:
+3. Set up environment variables:
+   Create a `.env` file in the root directory or rename `.env.example` to `.env` and add/change the following:
+
+   ```
+   NVIDIA_API_KEY=your_nvidia_api_key_here
+   PORT=5000
+   ```
+
+4. Run the server:
 
    ```bash
    npm start
    ```
 
-4. The server will start at `http://localhost:5000`.
+5. The server will start at `http://localhost:5000`.
 
-5. Ensure your SQLite databases (`main.db`) are set up correctly. The database schemas are initialized automatically when the server starts.
+6. Ensure your SQLite databases (`main.db`) are set up correctly. The database schemas are initialized automatically when the server starts.
 
 ## Usage
 
@@ -235,7 +246,7 @@ GET http://localhost:5000/api/content/1
 
 ```json
 {
-  "message": "This is the content for item 1"
+  "content": "This is the content for item 1"
 }
 ```
 
@@ -308,6 +319,74 @@ PUT http://localhost:5000/api/update/1
   }
 }
 ```
+
+### Generate Plan
+
+- **Endpoint**: `/api/generate-plan/:id`
+- **Method**: `GET`
+- **Description**: Generates an AI-powered plan for solving a hint or assignment.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/generate-plan/1
+```
+
+#### Example Response:
+
+```json
+{
+  "message": "Plan generated and saved successfully",
+  "plan": "Step 1: ... Step 2: ... Step 3: ..."
+}
+```
+
+### Get Leaderboard
+
+- **Endpoint**: `/api/leaderboard`
+- **Method**: `GET`
+- **Description**: Scrapes the leaderboard data from Jotihunt's public scorelist and returns it in JSON format.
+
+#### Example Request:
+
+```bash
+GET http://localhost:5000/api/leaderboard
+```
+
+#### Example Response:
+
+```json
+[
+  {
+    "position": 1,
+    "groupName": "Team A",
+    "points": 250
+  },
+  {
+    "position": 2,
+    "groupName": "Team B",
+    "points": 230
+  },
+  {
+    "position": 3,
+    "groupName": "Team C",
+    "points": 220
+  }
+]
+```
+
+#### Error Response:
+
+If the server fails to scrape the leaderboard, the following error response will be returned:
+
+```json
+{
+  "error": "Failed to scrape leaderboard",
+  "details": "Error message"
+}
+```
+
+This will provide users with the necessary information on how to use the new `/api/leaderboard` endpoint.
 
 ### Visual Database
 
@@ -411,4 +490,4 @@ Feel free to contribute to this project by submitting issues or pull requests.
 
 ---
 
-This project is built using `Express.js` and `SQLite3` for managing the backend, while data is fetched from Jotihunt's official API using `Axios`. The backend is designed to automatically retrieve and store game data every minute, allowing for real-time updates during gameplay. It also includes performance monitoring features to track API response times.
+This project is built using `Express.js` and `SQLite3` for managing the backend, while data is fetched from Jotihunt's official API using `Axios`. The backend is designed to automatically retrieve and store game data every minute, allowing for real-time updates during gameplay. It also includes performance monitoring features to track API response times and AI-powered plan generation using the NVIDIA AI API.

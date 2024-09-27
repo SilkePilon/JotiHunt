@@ -7,9 +7,17 @@ const sqlite3 = require("sqlite3").verbose();
 const { open } = require("sqlite");
 const SqliteToJson = require("sqlite-to-json");
 const { stringify } = require("querystring");
+const { OpenAI } = require("openai");
+const cheerio = require("cheerio");
+require("dotenv").config();
+
+const openai = new OpenAI({
+  apiKey: process.env.NVIDIA_API_KEY,
+  baseURL: "https://integrate.api.nvidia.com/v1",
+});
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -72,6 +80,17 @@ async function initDatabase() {
       endpoint TEXT,
       timestamp TEXT,
       response_time_ms REAL
+    )
+  `);
+
+  await mainDb.exec(`
+    CREATE TABLE IF NOT EXISTS plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id INTEGER,
+      item_title TEXT,
+      plan_content TEXT,
+      created_at TEXT,
+      FOREIGN KEY (item_id) REFERENCES items (id)
     )
   `);
 }
@@ -185,6 +204,67 @@ setInterval(updateDatabase, 60000); // Fetch every minute
 
 // API endpoints
 
+app.get("/api/generate-plan/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Fetch item from items table
+    const item = await mainDb.get("SELECT * FROM items WHERE id = ?", id);
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    // Fetch content from content table
+    const content = await mainDb.get(
+      "SELECT message FROM content WHERE id = ?",
+      id
+    );
+    if (!content) {
+      return res.status(404).json({ error: "Content not found" });
+    }
+
+    const itemContent = JSON.parse(content.message);
+
+    console.log("Generating plan for", item.type, item.title);
+
+    // Generate AI plan
+    const prompt = `Create a plan to solve the following ${item.type}:\n\nTitle: ${item.title}\n\nContent: ${itemContent.content}\n\nProvide a step-by-step plan to address this ${item.type}. We cant ask the ones who assigned us this for help or clarification its a race for who finishes this first. write it so it does not look like your responding to this message. dont make use of markdown use HTML instead. USE HTML AS RESPONSE FORMAT RESPOND IN DUTCH (netherlands)`;
+
+    const completion = await openai.chat.completions.create({
+      model: "meta/llama-3.1-405b-instruct",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.2,
+      top_p: 0.7,
+      max_tokens: 1024,
+      stream: false,
+    });
+    const plan = completion.choices[0].message.content;
+    console.log("Generated plan!");
+
+    // Save plan to database
+    const timestamp = new Date().toISOString();
+    await mainDb.run(
+      "INSERT INTO plans (item_id, item_title, plan_content, created_at) VALUES (?, ?, ?, ?)",
+      [id, item.title, plan, timestamp]
+    );
+
+    res.json({
+      message: "Plan generated and saved successfully",
+      plan: plan,
+    });
+  } catch (error) {
+    console.error("Error generating plan:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to generate plan", details: error.message });
+  }
+});
+
 // New endpoint to get API response times
 app.get("/api/response-times", async (req, res) => {
   try {
@@ -202,6 +282,41 @@ app.get("/api/response-times", async (req, res) => {
   } catch (error) {
     console.error("Error retrieving response times:", error);
     res.status(500).json({ error: "Failed to retrieve response times" });
+  }
+});
+
+app.get("/api/leaderboard", async (req, res) => {
+  try {
+    // test url: https://web.archive.org/web/20230327175840/https://jotihunt.nl/scorelijst
+    const response = await axios.get("https://jotihunt.nl/scorelijst");
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    const leaderboard = [];
+
+    $("tbody.divide-y.divide-gray-200.bg-white > tr").each((index, element) => {
+      const tds = $(element).find(
+        "td.whitespace-nowrap.px-3.py-4.text-sm.text-gray-500"
+      );
+      if (tds.length === 3) {
+        const position = $(tds[0]).text().trim();
+        const groupName = $(tds[1]).text().trim();
+        const points = $(tds[2]).text().trim();
+
+        leaderboard.push({
+          position: parseInt(position),
+          groupName,
+          points: parseInt(points),
+        });
+      }
+    });
+
+    res.json(leaderboard);
+  } catch (error) {
+    console.error("Error scraping leaderboard:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to scrape leaderboard", details: error.message });
   }
 });
 
@@ -639,6 +754,16 @@ app.get("/database", async (req, res) => {
         return;
       }
 
+      // Filter out unwanted tables
+      const filteredData = Object.fromEntries(
+        Object.entries(all).filter(
+          ([key]) =>
+            !["our_api_response_times", "jotihunt_api_response_times"].includes(
+              key
+            )
+        )
+      );
+
       // Send HTML response with embedded JSON data
       res.send(`
         <section>
@@ -650,13 +775,13 @@ app.get("/database", async (req, res) => {
         <script>
           const jsonCrackEmbed = document.querySelector("#jsoncrackEmbed");
 
-          // Convert the database data to JSON
-          const json = JSON.stringify(${JSON.stringify(all)});
+          // Convert the filtered database data to JSON
+          const json = JSON.stringify(${JSON.stringify(filteredData)});
           
           // Wait for the window to load before posting the message
           const options = {
             theme: "dark", // "light" or "dark"
-            direction: "UP", // "UP", "DOWN", "LEFT", "RIGHT"
+            direction: "RIGHT", // "UP", "DOWN", "LEFT", "RIGHT"
           };
           window.addEventListener("load", () => {
             jsonCrackEmbed.contentWindow.postMessage({ json, options }, "*");
