@@ -9,6 +9,7 @@ const SqliteToJson = require("sqlite-to-json");
 const { stringify } = require("querystring");
 const { OpenAI } = require("openai");
 const cheerio = require("cheerio");
+const stringSimilarity = require("string-similarity");
 require("dotenv").config();
 
 const openai = new OpenAI({
@@ -285,10 +286,12 @@ app.get("/api/response-times", async (req, res) => {
   }
 });
 
-app.get("/api/leaderboard", async (req, res) => {
+app.get("/api/leaderboard/:groupName?", async (req, res) => {
   try {
     // test url: https://web.archive.org/web/20230327175840/https://jotihunt.nl/scorelijst
-    const response = await axios.get("https://jotihunt.nl/scorelijst");
+    const response = await axios.get(
+      "https://web.archive.org/web/20230327175840/https://jotihunt.nl/scorelijst"
+    );
     const html = response.data;
     const $ = cheerio.load(html);
 
@@ -311,7 +314,40 @@ app.get("/api/leaderboard", async (req, res) => {
       }
     });
 
-    res.json(leaderboard);
+    const requestedGroupName = req.params.groupName;
+    // If no group name is provided, return the full leaderboard
+    if (!requestedGroupName) {
+      if (leaderboard.length > 0) {
+        return res.json(leaderboard);
+      } else {
+        return res.status(404).json({ error: "No leaderboard data available" });
+      }
+    }
+
+    // Ensure groupNames is an array of strings
+    const groupNames = leaderboard.map((entry) => entry.groupName);
+
+    if (groupNames.length === 0) {
+      return res.status(404).json({ error: "No groups found in leaderboard" });
+    }
+
+    // Find the best matching group name
+    const match = stringSimilarity.findBestMatch(
+      requestedGroupName,
+      groupNames
+    );
+    const bestMatch = match.bestMatch.target;
+
+    // Find the matching leaderboard entry
+    const matchingEntry = leaderboard.find(
+      (entry) => entry.groupName === bestMatch
+    );
+
+    if (matchingEntry) {
+      res.json(matchingEntry);
+    } else {
+      res.status(404).json({ error: "Group not found" });
+    }
   } catch (error) {
     console.error("Error scraping leaderboard:", error);
     res

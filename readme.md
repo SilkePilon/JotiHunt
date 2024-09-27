@@ -348,6 +348,8 @@ GET http://localhost:5000/api/generate-plan/1
 - **Endpoint**: `/api/leaderboard`
 - **Method**: `GET`
 - **Description**: Scrapes the leaderboard data from Jotihunt's public scorelist and returns it in JSON format.
+- **Optional**: Enter a group name like this `/api/leaderboard/groupNameHere` to specifically search for that group. The name does not need to be correct.
+  - `:groupName`: Is one of type `string`.
 
 #### Example Request:
 
