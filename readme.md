@@ -544,8 +544,6 @@ If the server fails to scrape the leaderboard, the following error response will
 }
 ```
 
-This will provide users with the necessary information on how to use the new `/api/leaderboard` endpoint.
-
 ### Visual Database
 
 - **Endpoint**: `/database`
