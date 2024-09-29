@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="/"><img style="border-radius:0.9rem" src="https://i.kym-cdn.com/photos/images/original/000/704/416/f24.gif" alt="..." width="100%"></a>
+  <a href="/"><img style="border-radius:0.9rem" src="assets/bg_1.gif" alt="..." width="100%"></a>
   <br>
   
 </h1>
