@@ -53,7 +53,6 @@ Additionally, players can submit their current GPS location to the server, and t
    ```bash
    git clone https://github.com/SilkePilon/OpenJotiHuntMap.git
    ```
-
 2. Install the dependencies:
 
    ```bash
@@ -61,7 +60,6 @@ Additionally, players can submit their current GPS location to the server, and t
    cd backend
    npm install
    ```
-
 3. Set up environment variables:
    Create a `.env` file in the root directory or rename `.env.example` to `.env` and add/change the following:
 
@@ -69,15 +67,12 @@ Additionally, players can submit their current GPS location to the server, and t
    NVIDIA_API_KEY=your_nvidia_api_key_here
    PORT=5000
    ```
-
 4. Run the server:
 
    ```bash
    npm start
    ```
-
 5. The server will start at `http://localhost:5000`.
-
 6. Ensure your SQLite databases (`main.db`) are set up correctly. The database schemas are initialized automatically when the server starts.
 
 ## Database Schema
@@ -87,32 +82,26 @@ The backend uses SQLite databases with the following main tables:
 1. **items**: Stores game items (news, hints, assignments)
 
    - Columns: id, title, type, publish_at, retrieved_at, assignedTo, completed, reviewed, points
-
 2. **content**: Stores the content of game items
 
    - Columns: id, message
-
 3. **locations**: Stores user-shared locations
 
    - Columns: id, name, description, latitude, longitude, timestamp
-
 4. **current_area_statuses**: Stores the current status of each area
 
    - Columns: name, status, last_updated
-
 5. **area_status_history**: Stores the history of area status changes
 
    - Columns: id, area_id, status, timestamp
-
 6. **jotihunt_api_response_times**: Tracks response times of the Jotihunt API
 
    - Columns: id, timestamp, response_time_ms
-
 7. **our_api_response_times**: Tracks response times of our own API endpoints
 
    - Columns: id, endpoint, timestamp, response_time_ms
-
 8. **plans**: Stores AI-generated plans for hints and assignments
+
    - Columns: id, item_id, item_title, plan_content, created_at
 
 These tables are automatically created and managed by the backend application.
@@ -310,12 +299,12 @@ GET http://localhost:5000/api/area-statuses
 [
   {
     "name": "Alpha",
-    "status": "hunting",
+    "status": "red",
     "last_updated": "2024-09-23T10:00:00Z"
   },
   {
     "name": "Beta",
-    "status": "resting",
+    "status": "green",
     "last_updated": "2024-09-23T09:45:00Z"
   }
 ]
@@ -340,13 +329,13 @@ GET http://localhost:5000/api/area-status-history/Alpha
   {
     "id": 1,
     "area_id": "Alpha",
-    "status": "hunting",
+    "status": "green",
     "timestamp": "2024-09-23T10:00:00Z"
   },
   {
     "id": 2,
     "area_id": "Alpha",
-    "status": "resting",
+    "status": "red",
     "timestamp": "2024-09-23T09:30:00Z"
   }
 ]
