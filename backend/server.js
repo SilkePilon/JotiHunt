@@ -470,14 +470,64 @@ app.get("/api/leaderboard/:groupName?", async (req, res) => {
 
 app.get("/api/response-time-graph", async (req, res) => {
   try {
-    const jotihuntTimes = await mainDb.all(
-      "SELECT timestamp, response_time_ms FROM jotihunt_api_response_times ORDER BY timestamp DESC LIMIT 100"
+    // Fetch unique dates where data exists for both APIs
+    const jotihuntDates = await mainDb.all(
+      "SELECT DISTINCT DATE(timestamp) as date FROM jotihunt_api_response_times ORDER BY date"
     );
-    const ourApiTimes = await mainDb.all(
-      "SELECT timestamp, response_time_ms FROM our_api_response_times ORDER BY timestamp DESC LIMIT 100"
+    const ourApiDates = await mainDb.all(
+      "SELECT DISTINCT DATE(timestamp) as date FROM our_api_response_times ORDER BY date"
     );
 
-    // Render the HTML page with the graph
+    // Extract just the date strings in 'YYYY-MM-DD' format
+    const validDates = [
+      ...new Set([
+        ...jotihuntDates.map((d) => d.date),
+        ...ourApiDates.map((d) => d.date),
+      ]),
+    ].sort();
+
+    const { selectedDate, timeframe } = req.query;
+
+    // Define available timeframes for the dropdown (hours)
+    const availableTimeframes = [1, 2, 4, 5, 7, 24]; // In hours
+
+    let startTime, endTime;
+
+    if (selectedDate && timeframe) {
+      const hours = parseInt(timeframe, 10);
+
+      if (hours === 24) {
+        // Full day (24 hours)
+        startTime = new Date(selectedDate + "T00:00:00.000Z").toISOString();
+        endTime = new Date(selectedDate + "T23:59:59.999Z").toISOString();
+      } else {
+        // End time is always the last second of the selected date (23:59:59)
+        endTime = new Date(selectedDate + "T23:59:59.999Z").toISOString();
+
+        // Start time is calculated as X hours before the end of the day
+        const endOfDayTimestamp = new Date(
+          selectedDate + "T23:59:59.999Z"
+        ).getTime();
+        const startOfDayTimestamp = endOfDayTimestamp - hours * 60 * 60 * 1000;
+        startTime = new Date(startOfDayTimestamp).toISOString();
+      }
+    } else {
+      // Default to last 4 hours from the current time if no date is selected
+      startTime = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+      endTime = new Date().toISOString();
+    }
+
+    // Fetch data from the database for the selected timeframe
+    const jotihuntTimes = await mainDb.all(
+      "SELECT timestamp, response_time_ms FROM jotihunt_api_response_times WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp DESC",
+      [startTime, endTime]
+    );
+    const ourApiTimes = await mainDb.all(
+      "SELECT timestamp, response_time_ms FROM our_api_response_times WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp DESC",
+      [startTime, endTime]
+    );
+
+    // Render the HTML page with the graph and form
     res.send(`
       <!DOCTYPE html>
       <html lang="en">
@@ -488,10 +538,91 @@ app.get("/api/response-time-graph", async (req, res) => {
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          h1 {
+            color: #333;
+          }
+          form {
+            margin-bottom: 20px;
+          }
+          label {
+            margin-right: 10px;
+          }
+          input, button, select {
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+          }
+          button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+          }
+          button:hover {
+            background-color: #218838;
+          }
+          canvas {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          }
+        </style>
       </head>
       <body>
+        <h1>API Response Times Graph</h1>
+        <form id="timeFrameForm">
+          <label for="selectedDate">Select Date:</label>
+          <input type="date" id="selectedDate" name="selectedDate" 
+                 value="${selectedDate || ""}" 
+                 min="${validDates[0]}" 
+                 max="${validDates[validDates.length - 1]}" 
+                 list="valid-dates">
+
+          <datalist id="valid-dates">
+            ${validDates
+              .map((date) => `<option value="${date}"></option>`)
+              .join("")}
+          </datalist>
+
+          <label for="timeframe">Select Timeframe:</label>
+          <select id="timeframe" name="timeframe">
+            ${availableTimeframes
+              .map(
+                (hour) => `
+              <option value="${hour}" ${
+                  timeframe === String(hour) ? "selected" : ""
+                }>
+                ${hour === 24 ? "Full 24 hours" : `Last ${hour} hours`}
+              </option>
+            `
+              )
+              .join("")}
+          </select>
+
+          <button type="submit">Update Graph</button>
+        </form>
+
         <canvas id="responseTimeChart" width="800" height="400"></canvas>
+
         <script>
+          document.getElementById('timeFrameForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const selectedDate = document.getElementById('selectedDate').value;
+            const timeframe = document.getElementById('timeframe').value;
+            let queryParams = \`?selectedDate=\${selectedDate}&timeframe=\${timeframe}\`;
+            window.location.href = \`/api/response-time-graph\${queryParams}\`;
+          });
+
           const jotihuntTimes = ${JSON.stringify(jotihuntTimes)};
           const ourApiTimes = ${JSON.stringify(ourApiTimes)};
 
