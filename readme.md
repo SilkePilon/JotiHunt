@@ -1,6 +1,6 @@
 # Jotihunt Backend
 
-This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-world game where participants complete tasks, solve hints, and follow live updates. This backend provides APIs to retrieve new game data (news, hints, and assignments) and enables users to share their live location, which can be displayed to other users.
+This is an backend for the Jotihunt IRL game. Jotihunt is an interactive, real-world game where participants complete tasks, solve hints, and follow live updates. This backend provides APIs to retrieve new game data (news, hints, and assignments) and enables users to share their live location, which can be displayed to other users.
 
 > [!WARNING]  
 > This project is still in development and may undergo breaking changes in a fast time frame.
@@ -55,13 +55,13 @@ Additionally, players can submit their current GPS location to the server, and t
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/SilkePilon/OpenJotiHuntMap.git
+   git clone https://github.com/SilkePilon/JotiHunt.git
    ```
 
 2. Install the dependencies:
 
    ```bash
-   cd OpenJotiHuntMap
+   cd JotiHunt
    cd backend
    npm install
    ```
@@ -89,6 +89,22 @@ Under the `examples/` directory you can find some simple examples that make full
 
 > [!TIP]
 > These examples were made fast and are only made to visualize a use case for the API and we don't recommend using this for the game. We instead encourage you and your group to build your own beautiful dashboard using modern tools.
+
+## Open-Source Database
+
+As part of this project, we will be making our version Jotihunt database open-source after the event concludes. This means:
+
+1. **Public Access**: Once the Jotihunt event is finished, we will publish our complete database, allowing anyone to download and analyze it.
+
+2. **Data Analysis**: Researchers, other scout groups, and Jotihunt enthusiasts can use this data for various purposes, such as:
+
+   - Studying scouting strategies
+   - Analyzing game patterns
+   - Improving future Jotihunt performances
+
+3. **Community Contribution**: This initiative aims to foster knowledge sharing and collaboration within the Jotihunt community.
+
+4. **Educational Resource**: The database can serve as a valuable learning tool for groups preparing for future Jotihunt events.
 
 ## Database Schema
 
