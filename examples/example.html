@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jotihunt Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #ffffff;
+        --primary-color: #4a90e2;
+        --secondary-color: #50c878;
+        --accent-color: #ff6b6b;
+        --card-bg: #2c2c2c;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      header {
+        background-color: var(--card-bg);
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+      }
+
+      main {
+        display: flex;
+        flex: 1;
+      }
+
+      nav {
+        width: 200px;
+        background-color: var(--card-bg);
+        padding: 1rem;
+      }
+
+      nav ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      nav ul li {
+        margin-bottom: 0.5rem;
+      }
+
+      nav ul li a {
+        color: var(--text-color);
+        text-decoration: none;
+        display: block;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+      }
+
+      nav ul li a:hover {
+        background-color: var(--primary-color);
+      }
+
+      .content {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+      }
+
+      .card {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .card h3 {
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 0.5rem;
+        text-align: left;
+        border-bottom: 1px solid #444;
+      }
+
+      th {
+        background-color: var(--primary-color);
+        color: var(--text-color);
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background-color: var(--primary-color);
+        color: var(--text-color);
+        text-decoration: none;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+      }
+
+      .btn:hover {
+        background-color: #3a7bc8;
+      }
+
+      .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+
+      .status-active {
+        background-color: var(--secondary-color);
+      }
+
+      .status-inactive {
+        background-color: var(--accent-color);
+      }
+
+      #map {
+        height: 400px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Jotihunt Dashboard</h1>
+    </header>
+    <main>
+      <nav>
+        <ul>
+          <li><a href="#dashboard">Dashboard</a></li>
+          <li><a href="#news">News</a></li>
+          <li><a href="#hints">Hints</a></li>
+          <li><a href="#assignments">Assignments</a></li>
+          <li><a href="#area-statuses">Area Statuses</a></li>
+          <li><a href="#leaderboard">Leaderboard</a></li>
+          <li><a href="#map">Map</a></li>
+          <li><a href="#statistics">Statistics</a></li>
+        </ul>
+      </nav>
+      <div class="content">
+        <section id="dashboard" class="dashboard">
+          <div class="card">
+            <h3>Quick Stats</h3>
+            <p>Total Items: <span id="totalItems">0</span></p>
+            <p>Completed Items: <span id="completedItems">0</span></p>
+            <p>Total Points: <span id="totalPoints">0</span></p>
+          </div>
+          <div class="card">
+            <h3>Recent News</h3>
+            <ul id="recentNews"></ul>
+          </div>
+          <div class="card">
+            <h3>Active Hints</h3>
+            <ul id="activeHints"></ul>
+          </div>
+          <div class="card">
+            <h3>Pending Assignments</h3>
+            <ul id="pendingAssignments"></ul>
+          </div>
+        </section>
+        <section id="news">
+          <h2>News</h2>
+          <div id="newsList"></div>
+        </section>
+        <section id="hints">
+          <h2>Hints</h2>
+          <div id="hintsList"></div>
+        </section>
+        <section id="assignments">
+          <h2>Assignments</h2>
+          <div id="assignmentsList"></div>
+        </section>
+        <section id="area-statuses">
+          <h2>Area Statuses</h2>
+          <div id="areaStatusList"></div>
+        </section>
+        <section id="leaderboard">
+          <h2>Leaderboard</h2>
+          <div id="leaderboardList"></div>
+        </section>
+        <section id="map">
+          <h2>Map</h2>
+          <div id="mapContainer"></div>
+        </section>
+        <section id="statistics">
+          <h2>Statistics</h2>
+          <div class="card">
+            <h3>Response Time Graph</h3>
+            <canvas id="responseTimeChart"></canvas>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css"
+    />
+
+    <script>
+      const API_BASE_URL = "http://localhost:5000/api";
+
+      // Fetch and display quick stats
+      async function fetchQuickStats() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/stats`);
+          const data = await response.json();
+          document.getElementById("totalItems").textContent = data.totalItems;
+          document.getElementById("completedItems").textContent =
+            data.completedItems;
+          document.getElementById("totalPoints").textContent = data.totalPoints;
+        } catch (error) {
+          console.error("Error fetching quick stats:", error);
+        }
+      }
+
+      // Fetch and display recent news
+      async function fetchRecentNews() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/data/news`);
+          const data = await response.json();
+          const recentNews = data.slice(0, 5);
+          const newsList = document.getElementById("recentNews");
+          newsList.innerHTML = "";
+          recentNews.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item.title;
+            newsList.appendChild(li);
+          });
+        } catch (error) {
+          console.error("Error fetching recent news:", error);
+        }
+      }
+
+      // Fetch and display active hints
+      async function fetchActiveHints() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/data/hints`);
+          const data = await response.json();
+          const activeHints = data
+            .filter((item) => !item.completed)
+            .slice(0, 5);
+          const hintsList = document.getElementById("activeHints");
+          hintsList.innerHTML = "";
+          activeHints.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item.title;
+            hintsList.appendChild(li);
+          });
+        } catch (error) {
+          console.error("Error fetching active hints:", error);
+        }
+      }
+
+      // Fetch and display pending assignments
+      async function fetchPendingAssignments() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/data/assignments`);
+          const data = await response.json();
+          const pendingAssignments = data
+            .filter((item) => !item.completed)
+            .slice(0, 5);
+          const assignmentsList = document.getElementById("pendingAssignments");
+          assignmentsList.innerHTML = "";
+          pendingAssignments.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = item.title;
+            assignmentsList.appendChild(li);
+          });
+        } catch (error) {
+          console.error("Error fetching pending assignments:", error);
+        }
+      }
+
+      // Fetch and display area statuses
+      async function fetchAreaStatuses() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/area-statuses`);
+          const data = await response.json();
+          const areaStatusList = document.getElementById("areaStatusList");
+          areaStatusList.innerHTML = "";
+          data.forEach((area) => {
+            const div = document.createElement("div");
+            div.innerHTML = `
+                        <h3>${area.name}</h3>
+                        <p>Status: <span class="status-indicator ${
+                          area.status === "active"
+                            ? "status-active"
+                            : "status-inactive"
+                        }"></span>${area.status}</p>
+                        <p>Last Updated: ${new Date(
+                          area.last_updated
+                        ).toLocaleString()}</p>
+                    `;
+            areaStatusList.appendChild(div);
+          });
+        } catch (error) {
+          console.error("Error fetching area statuses:", error);
+        }
+      }
+
+      // Fetch and display leaderboard
+      async function fetchLeaderboard() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/leaderboard`);
+          const data = await response.json();
+          const leaderboardList = document.getElementById("leaderboardList");
+          leaderboardList.innerHTML = "";
+          const table = document.createElement("table");
+          table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Group Name</th>
+                            <th>Points</th>
+                            <th>Area</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+          data.forEach((entry) => {
+            const row = table.querySelector("tbody").insertRow();
+            row.innerHTML = `
+                        <td>${entry.position}</td>
+                        <td>${entry.groupName}</td>
+                        <td>${entry.points}</td>
+                        <td>${entry.area}</td>
+                    `;
+          });
+          leaderboardList.appendChild(table);
+        } catch (error) {
+          console.error("Error fetching leaderboard:", error);
+        }
+      }
+
+      // Initialize and display map
+      function initMap() {
+        const map = L.map("mapContainer").setView([52.3676, 4.9041], 7);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        // Fetch and display locations
+        fetch(`${API_BASE_URL}/get-locations`)
+          .then((response) => response.json())
+          .then((locations) => {
+            locations.forEach((location) => {
+              L.marker([location.latitude, location.longitude])
+                .addTo(map)
+                .bindPopup(
+                  `<b>${location.name}</b><br>${location.description}`
+                );
+            });
+          })
+          .catch((error) => console.error("Error fetching locations:", error));
+      }
+
+      // Fetch and display response time graph
+      async function fetchResponseTimeGraph() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/response-times`);
+          const data = await response.json();
+
+          const ctx = document
+            .getElementById("responseTimeChart")
+            .getContext("2d");
+          new Chart(ctx, {
+            type: "line",
+            data: {
+              datasets: [
+                {
+                  label: "Jotihunt API",
+                  data: data.jotihuntApiTimes.map((item) => ({
+                    x: new Date(item.timestamp),
+                    y: item.response_time_ms,
+                  })),
+                  borderColor: "rgb(75, 192, 192)",
+                  tension: 0.1,
+                },
+                {
+                  label: "Our API",
+                  data: data.ourApiTimes.map((item) => ({
+                    x: new Date(item.timestamp),
+                    y: item.response_time_ms,
+                  })),
+                  borderColor: "rgb(255, 99, 132)",
+                  tension: 0.1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              scales: {
+                x: {
+                  type: "time",
+                  time: {
+                    unit: "minute",
+                  },
+                  title: {
+                    display: true,
+                    text: "Time",
+                  },
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: "Response Time (ms)",
+                  },
+                },
+              },
+            },
+          });
+        } catch (error) {
+          console.error("Error fetching response time data:", error);
+        }
+      }
+      async function fetchNews() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/data/news`);
+          const data = await response.json();
+          const newsList = document.getElementById("newsList");
+          newsList.innerHTML = "";
+          data.forEach((item) => {
+            const article = document.createElement("article");
+            article.className = "card";
+            article.innerHTML = `
+                    <h3>${item.title}</h3>
+                    <p>Published: ${new Date(
+                      item.publish_at
+                    ).toLocaleString()}</p>
+                    <button class="btn" onclick="fetchContent(${
+                      item.id
+                    }, 'news')">Read More</button>
+                `;
+            newsList.appendChild(article);
+          });
+        } catch (error) {
+          console.error("Error fetching news:", error);
+        }
+      }
+
+      // Fetch and display detailed hints
+      async function fetchHints() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/data/hints`);
+          const data = await response.json();
+          const hintsList = document.getElementById("hintsList");
+          hintsList.innerHTML = "";
+          data.forEach((item) => {
+            const article = document.createElement("article");
+            article.className = "card";
+            article.innerHTML = `
+                    <h3>${item.title}</h3>
+                    <p>Published: ${new Date(
+                      item.publish_at
+                    ).toLocaleString()}</p>
+                    <p>Status: ${item.completed ? "Completed" : "Active"}</p>
+                    <button class="btn" onclick="fetchContent(${
+                      item.id
+                    }, 'hints')">View Details</button>
+                `;
+            hintsList.appendChild(article);
+          });
+        } catch (error) {
+          console.error("Error fetching hints:", error);
+        }
+      }
+
+      // Fetch and display detailed assignments
+      async function fetchAssignments() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/data/assignments`);
+          const data = await response.json();
+          const assignmentsList = document.getElementById("assignmentsList");
+          assignmentsList.innerHTML = "";
+          data.forEach((item) => {
+            const article = document.createElement("article");
+            article.className = "card";
+            article.innerHTML = `
+                    <h3>${item.title}</h3>
+                    <p>Published: ${new Date(
+                      item.publish_at
+                    ).toLocaleString()}</p>
+                    <p>Status: ${item.completed ? "Completed" : "Pending"}</p>
+                    <p>Assigned To: ${item.assignedTo || "Unassigned"}</p>
+                    <p>Points: ${item.points}</p>
+                    <button class="btn" onclick="fetchContent(${
+                      item.id
+                    }, 'assignments')">View Details</button>
+                    <button class="btn" onclick="updateAssignment(${
+                      item.id
+                    })">Update Status</button>
+                `;
+            assignmentsList.appendChild(article);
+          });
+        } catch (error) {
+          console.error("Error fetching assignments:", error);
+        }
+      }
+
+      // Fetch content for a specific item
+      async function fetchContent(id, type) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/content/${id}`);
+          const data = await response.json();
+          displayContentModal(data, type);
+        } catch (error) {
+          console.error("Error fetching content:", error);
+        }
+      }
+
+      // Display content in a modal
+      function displayContentModal(content, type) {
+        const modal = document.createElement("div");
+        modal.className = "modal";
+        modal.innerHTML = `
+            <div class="modal-content card">
+                <h2>${content.title}</h2>
+                <p>${content.content}</p>
+                ${
+                  type === "assignments"
+                    ? `<button class="btn" onclick="generatePlan(${content.id})">Generate Plan</button>`
+                    : ""
+                }
+                <button class="btn" onclick="closeModal()">Close</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+      }
+
+      // Close the modal
+      function closeModal() {
+        const modal = document.querySelector(".modal");
+        if (modal) {
+          modal.remove();
+        }
+      }
+
+      // Update assignment status
+      async function updateAssignment(id) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/update/${id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              completed: 1,
+              reviewed: 1,
+              points: 10, // You might want to make this dynamic
+            }),
+          });
+          const data = await response.json();
+          if (data.message === "Item updated successfully") {
+            alert("Assignment updated successfully");
+            fetchAssignments(); // Refresh the assignments list
+          } else {
+            alert("Failed to update assignment");
+          }
+        } catch (error) {
+          console.error("Error updating assignment:", error);
+          alert("Error updating assignment");
+        }
+      }
+
+      // Generate plan for an assignment
+      async function generatePlan(id) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/generate-plan/${id}`);
+          const data = await response.json();
+          displayPlanModal(data.plan);
+        } catch (error) {
+          console.error("Error generating plan:", error);
+          alert("Error generating plan");
+        }
+      }
+
+      // Display generated plan in a modal
+      function displayPlanModal(plan) {
+        const modal = document.createElement("div");
+        modal.className = "modal";
+        modal.innerHTML = `
+            <div class="modal-content card">
+                <h2>Generated Plan</h2>
+                <div>${plan}</div>
+                <button class="btn" onclick="closeModal()">Close</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+      }
+
+      // Function to handle navigation
+      function handleNavigation() {
+        const navLinks = document.querySelectorAll("nav a");
+        const sections = document.querySelectorAll("section");
+
+        navLinks.forEach((link) => {
+          link.addEventListener("click", (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute("href").slice(1);
+            sections.forEach((section) => {
+              section.style.display =
+                section.id === targetId ? "block" : "none";
+            });
+
+            // Load content based on the selected section
+            switch (targetId) {
+              case "news":
+                fetchNews();
+                break;
+              case "hints":
+                fetchHints();
+                break;
+              case "assignments":
+                fetchAssignments();
+                break;
+              case "area-statuses":
+                fetchAreaStatuses();
+                break;
+              case "leaderboard":
+                fetchLeaderboard();
+                break;
+              case "map":
+                initMap();
+                break;
+              case "statistics":
+                fetchResponseTimeGraph();
+                break;
+              default:
+                break;
+            }
+          });
+        });
+      }
+
+      // Initialize the dashboard
+      function initDashboard() {
+        fetchQuickStats();
+        fetchRecentNews();
+        fetchActiveHints();
+        fetchPendingAssignments();
+        fetchAreaStatuses();
+        fetchLeaderboard();
+        initMap();
+        fetchResponseTimeGraph();
+        handleNavigation();
+
+        // Show the dashboard section by default
+        document.getElementById("dashboard").style.display = "grid";
+        document
+          .querySelectorAll("section:not(#dashboard)")
+          .forEach((section) => {
+            section.style.display = "none";
+          });
+      }
+
+      // Call initDashboard when the page loads
+      window.addEventListener("load", initDashboard);
+    </script>
+  </body>
+</html>

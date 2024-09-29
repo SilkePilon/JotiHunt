@@ -268,10 +268,7 @@ app.get("/api/area-statuses", async (req, res) => {
     const currentStatuses = await mainDb.all(
       "SELECT * FROM current_area_statuses"
     );
-    console.log(
-      "Retrieved area statuses:",
-      util.inspect(currentStatuses, { depth: null })
-    );
+
     res.json(currentStatuses);
   } catch (error) {
     console.error("Error retrieving area statuses:", error);
@@ -779,7 +776,6 @@ app.get("/api/get-locations", async (req, res) => {
   try {
     const locations = await mainDb.all("SELECT * FROM locations");
     res.status(200).json(locations);
-    console.log("Locations retrieved:", locations);
   } catch (error) {
     console.error("Error retrieving locations:", error);
     res.status(500).json({ error: "Failed to retrieve locations" });
