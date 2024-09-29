@@ -107,7 +107,7 @@ As part of this project, we will be making our version Jotihunt database open-so
 4. **Educational Resource**: The database can serve as a valuable learning tool for groups preparing for future Jotihunt events.
 
 > [!IMPORTANT]  
-> **IMPORTANT**: Crucial information such as names and private information will be removed or replaced with placeholders.
+> Crucial information such as names and private information will be removed or replaced with placeholders.
 
 ## Database Schema
 
