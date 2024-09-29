@@ -10,6 +10,7 @@ const { stringify } = require("querystring");
 const { OpenAI } = require("openai");
 const cheerio = require("cheerio");
 const stringSimilarity = require("string-similarity");
+const util = require("util");
 require("dotenv").config();
 
 const openai = new OpenAI({
@@ -94,6 +95,23 @@ async function initDatabase() {
       FOREIGN KEY (item_id) REFERENCES items (id)
     )
   `);
+
+  await mainDb.exec(`
+    CREATE TABLE IF NOT EXISTS current_area_statuses (
+      name TEXT PRIMARY KEY,
+      status TEXT,
+      last_updated TEXT
+    )
+  `);
+
+  await mainDb.exec(`
+    CREATE TABLE IF NOT EXISTS area_status_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      area_id TEXT,
+      status TEXT,
+      timestamp TEXT
+    )
+  `);
 }
 
 // Fetch data from Jotihunt API
@@ -114,6 +132,49 @@ async function fetchJotihuntData() {
   } catch (error) {
     console.error("Error fetching Jotihunt data:", error);
     return [];
+  }
+}
+
+// Add this new function to fetch and update area statuses
+async function updateAreaStatuses() {
+  try {
+    const response = await axios.get("https://jotihunt.nl/api/2.0/areas");
+    const areas = response.data.data;
+
+    for (const area of areas) {
+      // Get current status
+      const currentStatus = await mainDb.get(
+        "SELECT status FROM current_area_statuses WHERE name = ?",
+        area.name
+      );
+
+      // Update current_area_statuses
+      const result = await mainDb.run(
+        `
+        INSERT OR REPLACE INTO current_area_statuses (name, status, last_updated)
+        VALUES (?, ?, ?)
+      `,
+        [area.name, area.status, area.updated_at]
+      );
+
+      // If status has changed, add to area_status_history
+      if (!currentStatus || currentStatus.status !== area.status) {
+        const historyResult = await mainDb.run(
+          `
+          INSERT INTO area_status_history (area_id, status, timestamp)
+          VALUES (?, ?, ?)
+        `,
+          [area.name, area.status, area.updated_at]
+        );
+      }
+    }
+
+    // Verify the data in the database
+    const verificationResult = await mainDb.all(
+      "SELECT * FROM current_area_statuses"
+    );
+  } catch (error) {
+    console.error("Error updating area statuses:", error);
   }
 }
 
@@ -200,10 +261,40 @@ async function updateDatabase() {
   }
 }
 
-// Set up periodic data fetching
-setInterval(updateDatabase, 60000); // Fetch every minute
-
 // API endpoints
+
+app.get("/api/area-statuses", async (req, res) => {
+  try {
+    const currentStatuses = await mainDb.all(
+      "SELECT * FROM current_area_statuses"
+    );
+    console.log(
+      "Retrieved area statuses:",
+      util.inspect(currentStatuses, { depth: null })
+    );
+    res.json(currentStatuses);
+  } catch (error) {
+    console.error("Error retrieving area statuses:", error);
+    res.status(500).json({
+      error: "Failed to retrieve area statuses",
+      details: error.message,
+    });
+  }
+});
+
+app.get("/api/area-status-history/:areaName", async (req, res) => {
+  const { areaName } = req.params;
+  try {
+    const history = await mainDb.all(
+      "SELECT * FROM area_status_history WHERE area_id = ? ORDER BY timestamp DESC LIMIT 100",
+      areaName
+    );
+    res.json(history);
+  } catch (error) {
+    console.error("Error retrieving area status history:", error);
+    res.status(500).json({ error: "Failed to retrieve area status history" });
+  }
+});
 
 app.get("/api/generate-plan/:id", async (req, res) => {
   const { id } = req.params;
@@ -296,11 +387,27 @@ app.get("/api/leaderboard/:groupName?", async (req, res) => {
     const $ = cheerio.load(html);
 
     const leaderboard = [];
+    let currentArea = "";
+    let areaPosition = 1;
+    let isCurrentAreaLeader = false;
 
     $("tbody.divide-y.divide-gray-200.bg-white > tr").each((index, element) => {
       const tds = $(element).find(
         "td.whitespace-nowrap.px-3.py-4.text-sm.text-gray-500"
       );
+
+      // Check if this row represents a new area
+      const areaHeader = $(element).prev().find("th");
+      if (areaHeader.length > 0) {
+        currentArea = areaHeader.text().trim();
+        areaPosition = 1;
+        // Check if the area has the specific leader icon
+        isCurrentAreaLeader =
+          areaHeader.find(
+            'svg.h-6.w-6.inline.text-green-500[viewBox="0 0 24 24"]'
+          ).length > 0;
+      }
+
       if (tds.length === 3) {
         const position = $(tds[0]).text().trim();
         const groupName = $(tds[1]).text().trim();
@@ -310,7 +417,12 @@ app.get("/api/leaderboard/:groupName?", async (req, res) => {
           position: parseInt(position),
           groupName,
           points: parseInt(points),
+          area: currentArea,
+          areaPosition: areaPosition,
+          isAreaLeader: isCurrentAreaLeader,
         });
+
+        areaPosition++;
       }
     });
 
@@ -654,6 +766,43 @@ app.get("/api/test", async (req, res) => {
       };
     }
 
+    // Test area status endpoints
+    const currentStatusesResponse = await axios.get(
+      `http://localhost:${PORT}/api/area-statuses`
+    );
+    testResults.areaStatusEndpoints.getCurrentStatuses = {
+      status: currentStatusesResponse.status,
+      dataReceived: currentStatusesResponse.data.length > 0,
+      randomStatus:
+        currentStatusesResponse.data.length > 0
+          ? currentStatusesResponse.data[
+              Math.floor(Math.random() * currentStatusesResponse.data.length)
+            ]
+          : null,
+    };
+
+    // Test get area status history
+    if (currentStatusesResponse.data.length > 0) {
+      const randomArea =
+        currentStatusesResponse.data[
+          Math.floor(Math.random() * currentStatusesResponse.data.length)
+        ];
+      const historyResponse = await axios.get(
+        `http://localhost:${PORT}/api/area-status-history/${randomArea.name}`
+      );
+      testResults.areaStatusEndpoints.getStatusHistory = {
+        status: historyResponse.status,
+        dataReceived: historyResponse.data.length > 0,
+        areaName: randomArea.name,
+        randomHistoryEntry:
+          historyResponse.data.length > 0
+            ? historyResponse.data[
+                Math.floor(Math.random() * historyResponse.data.length)
+              ]
+            : null,
+      };
+    }
+
     // Test content endpoint
     const allItems = await mainDb.all("SELECT * FROM items");
     if (allItems.length > 0) {
@@ -891,5 +1040,10 @@ initDatabase().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     updateDatabase(); // Initial data fetch
+    updateAreaStatuses(); // Initial area status fetch
+
+    // Set up periodic updates
+    setInterval(updateDatabase, 60000); // Fetch every minute
+    setInterval(updateAreaStatuses, 60000); // Update area statuses every minute
   });
 });
