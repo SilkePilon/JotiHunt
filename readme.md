@@ -85,7 +85,10 @@ Additionally, players can submit their current GPS location to the server, and t
 
 ## Frontend Examples & Recommendations
 
-Under the `examples/` directory you can find some simple examples that make full use of the API or you can see some of the demo's we made (without API running):
+Under the `examples/` directory you can find some simple examples that make full use of the API or you can see some of the demo's we made:
+
+> [!NOTE]  
+> To see the sites in action make sure to run the API locally on the same pc you are accessing the site with.
 
 - [Dashboard 1 (example.html)](https://silkepilon.github.io/JotiHunt/example.html) - an dark and modern UI with tabs.
 - [Dashboard 2 (example2.html)](https://silkepilon.github.io/JotiHunt/example2.html) - an single page UI that has elements stacked vertical.
