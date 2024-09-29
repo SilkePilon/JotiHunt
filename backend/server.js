@@ -875,6 +875,10 @@ app.get("/api/test", async (req, res) => {
         saveLocation: null,
         getLocations: null,
       },
+      areaStatusEndpoints: {
+        getCurrentStatuses: null,
+        getStatusHistory: null,
+      },
     };
 
     // Test data endpoints
@@ -900,12 +904,6 @@ app.get("/api/test", async (req, res) => {
     testResults.areaStatusEndpoints.getCurrentStatuses = {
       status: currentStatusesResponse.status,
       dataReceived: currentStatusesResponse.data.length > 0,
-      randomStatus:
-        currentStatusesResponse.data.length > 0
-          ? currentStatusesResponse.data[
-              Math.floor(Math.random() * currentStatusesResponse.data.length)
-            ]
-          : null,
     };
 
     // Test get area status history

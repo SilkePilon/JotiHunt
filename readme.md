@@ -1,3 +1,9 @@
+<h1 align="center">
+  <br>
+  <a href="/"><img src="assets/bg.gif" alt="..." width="900"></a>
+  <br>
+</h1>
+
 # Jotihunt Backend
 
 This is an backend for the Jotihunt IRL game. Jotihunt is an interactive, real-world game where participants complete tasks, solve hints, and follow live updates. This backend provides APIs to retrieve new game data (news, hints, and assignments) and enables users to share their live location, which can be displayed to other users.
