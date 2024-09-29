@@ -446,7 +446,7 @@
 
       async function updateItem(id) {
         const assignedTo = document.getElementById("assignedTo").value;
-        const points = parseInt(document.getElementById("points").value);
+        const points = parseInt(document.getElementById("points").value) || 0;
         const reviewed = parseInt(document.getElementById("reviewed").value);
         const completed = parseInt(document.getElementById("completed").value);
 
