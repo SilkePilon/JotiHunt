@@ -2,7 +2,7 @@
 
 This is an backend for the Jotihunt IRL game. Jotihunt is an interactive, real-world game where participants complete tasks, solve hints, and follow live updates. This backend provides APIs to retrieve new game data (news, hints, and assignments) and enables users to share their live location, which can be displayed to other users.
 
-> [!WARNING]  
+> [!WARNING]
 > This project is still in development and may undergo breaking changes in a fast time frame.
 
 ## Features
@@ -20,7 +20,7 @@ This is an backend for the Jotihunt IRL game. Jotihunt is an interactive, real-w
 
 - [About](#about)
 - [Installation](#installation)
-- [Frontend Examples & Recommendations](#frontend-examples--recommendations)
+- [Frontend Examples &amp; Recommendations](#frontend-examples--recommendations)
 - [Usage](#usage)
 - [API Endpoints](#api-endpoints)
   - [Get Data](#get-data)
@@ -57,7 +57,6 @@ Additionally, players can submit their current GPS location to the server, and t
    ```bash
    git clone https://github.com/SilkePilon/JotiHunt.git
    ```
-
 2. Install the dependencies:
 
    ```bash
@@ -65,21 +64,22 @@ Additionally, players can submit their current GPS location to the server, and t
    cd backend
    npm install
    ```
-
 3. Set up environment variables:
    Create a `.env` file in the root directory or rename `.env.example` to `.env` and add/change the following:
 
    ```
-   NVIDIA_API_KEY=your_nvidia_api_key_here
+   # the port the server will run on
    PORT=5000
+   # OPTIONAL: a key to access the NVIDIA API to generate AI plans to solve hints or assignments
+   NVIDIA_API_KEY=nvapi-************
+   # the delay in milliseconds between API calls to the official jotihunt api.
+   DELAY=60000
    ```
-
 4. Run the server:
 
    ```bash
    npm start
    ```
-
 5. The server will start at `http://localhost:5000`.
 6. Ensure your SQLite databases (`main.db`) are set up correctly. The database schemas are initialized automatically when the server starts.
 
@@ -87,7 +87,7 @@ Additionally, players can submit their current GPS location to the server, and t
 
 Under the `examples/` directory you can find some simple examples that make full use of the API or you can see some of the demo's we made:
 
-> [!NOTE]  
+> [!NOTE]
 > To see the sites in action make sure to run the API locally on the same pc you are accessing the site with.
 
 - [Dashboard 1 (example.html)](https://silkepilon.github.io/JotiHunt/example.html) - an dark and modern UI with tabs.
@@ -101,18 +101,15 @@ Under the `examples/` directory you can find some simple examples that make full
 As part of this project, we will be making our version Jotihunt database open-source after the event concludes. This means:
 
 1. **Public Access**: Once the Jotihunt event is finished, we will publish our complete database, allowing anyone to download and analyze it.
-
 2. **Data Analysis**: Researchers, other scout groups, and Jotihunt enthusiasts can use this data for various purposes, such as:
 
    - Studying scouting strategies
    - Analyzing game patterns
    - Improving future Jotihunt performances
-
 3. **Community Contribution**: This initiative aims to foster knowledge sharing and collaboration within the Jotihunt community.
-
 4. **Educational Resource**: The database can serve as a valuable learning tool for groups preparing for future Jotihunt events.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Crucial information such as names and private information will be removed or replaced with placeholders.
 
 ## Database Schema
@@ -122,31 +119,24 @@ The backend uses SQLite databases with the following main tables:
 1. **items**: Stores game items (news, hints, assignments)
 
    - Columns: id, title, type, publish_at, retrieved_at, assignedTo, completed, reviewed, points
-
 2. **content**: Stores the content of game items
 
    - Columns: id, message
-
 3. **locations**: Stores user-shared locations
 
    - Columns: id, name, description, latitude, longitude, timestamp
-
 4. **current_area_statuses**: Stores the current status of each area
 
    - Columns: name, status, last_updated
-
 5. **area_status_history**: Stores the history of area status changes
 
    - Columns: id, area_id, status, timestamp
-
 6. **jotihunt_api_response_times**: Tracks response times of the Jotihunt API
 
    - Columns: id, timestamp, response_time_ms
-
 7. **our_api_response_times**: Tracks response times of our own API endpoints
 
    - Columns: id, endpoint, timestamp, response_time_ms
-
 8. **plans**: Stores AI-generated plans for hints and assignments
 
    - Columns: id, item_id, item_title, plan_content, created_at
@@ -646,5 +636,5 @@ Feel free to contribute to this project by submitting issues or pull requests.
 
 ---
 
-> [!NOTE]  
+> [!NOTE]
 > This project is built using `Express.js` and `SQLite3` for managing the backend, while data is fetched from Jotihunt's official API using `Axios`. The backend is designed to automatically retrieve and store game data every minute, allowing for real-time updates during gameplay. It also includes performance monitoring features to track API response times and AI-powered plan generation using the NVIDIA AI API.

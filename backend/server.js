@@ -20,14 +20,14 @@ const openai = new OpenAI({
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const DELAY = process.env.DELAY || 60000;
 
 app.use(bodyParser.json());
 app.use(cors());
 
 const MAIN_DB_PATH = path.join(__dirname, "main.db");
-const CONTENT_DB_PATH = path.join(__dirname, "content.db");
 
-let mainDb, contentDb;
+let mainDb;
 
 // Initialize databases
 async function initDatabase() {
@@ -1170,7 +1170,7 @@ initDatabase().then(() => {
     updateAreaStatuses(); // Initial area status fetch
 
     // Set up periodic updates
-    setInterval(updateDatabase, 60000); // Fetch every minute
-    setInterval(updateAreaStatuses, 60000); // Update area statuses every minute
+    setInterval(updateDatabase, DELAY); // Fetch every minute
+    setInterval(updateAreaStatuses, DELAY); // Update area statuses every minute
   });
 });
