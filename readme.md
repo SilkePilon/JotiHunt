@@ -1,8 +1,10 @@
 <h1 align="center">
   <br>
-  <a href="/"><img src="assets/bg.gif" alt="..." width="900"></a>
+  <a href="/"><img src="https://i.kym-cdn.com/photos/images/original/000/704/416/f24.gif" alt="..." width="100%"></a>
   <br>
+  
 </h1>
+<p align="center">- JotiHunt backend is always listening for u.</p>
 
 # Jotihunt Backend
 
