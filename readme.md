@@ -85,7 +85,10 @@ Additionally, players can submit their current GPS location to the server, and t
 
 ## Frontend Examples & Recommendations
 
-Under the `examples/` directory you can find some simple examples that make full use of the API or you can see the demo (without API running) [here](https://silkepilon.github.io/OpenJotiHuntMap/example.html).
+Under the `examples/` directory you can find some simple examples that make full use of the API or you can see some of the demo's we made (without API running):
+
+- [Dashboard 1 (example.html)](https://silkepilon.github.io/OpenJotiHuntMap/example.html).
+- [Dashboard 2 (example2.html)](https://silkepilon.github.io/OpenJotiHuntMap/example2.html).
 
 > [!TIP]
 > These examples were made fast and are only made to visualize a use case for the API and we don't recommend using this for the game. We instead encourage you and your group to build your own beautiful dashboard using modern tools.

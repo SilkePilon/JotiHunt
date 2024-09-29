@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Example Demo Site</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --primary-color: #4a90e2;
+        --secondary-color: #f5a623;
+        --background-color: #f0f4f8;
+        --text-color: #333;
+        --card-background: #ffffff;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--background-color);
+        color: var(--text-color);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      h1,
+      h2 {
+        color: var(--primary-color);
+      }
+
+      .card {
+        background-color: var(--card-background);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .button:hover {
+        background-color: #3a7bd5;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      th {
+        background-color: var(--primary-color);
+        color: white;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      .flex-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .flex-item {
+        flex: 1;
+        min-width: 300px;
+      }
+
+      #map {
+        height: 400px;
+        width: 100%;
+      }
+
+      .edit-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .edit-form input,
+      .edit-form select {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>API Example Demo Site</h1>
+
+      <div class="flex-container">
+        <div class="flex-item card">
+          <h2>Stats</h2>
+          <div id="stats"></div>
+        </div>
+
+        <div class="flex-item card">
+          <h2>Response Time Graph</h2>
+          <iframe
+            title="example"
+            style="border-radius: 0.75rem"
+            width="100%"
+            height="70%"
+            src="http://localhost:5000/api/response-time-graph"
+          >
+          </iframe>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Data</h2>
+        <select id="dataType">
+          <option value="news">News</option>
+          <option value="hints">Hints</option>
+          <option value="assignments">Assignments</option>
+        </select>
+        <button class="button" onclick="fetchData()">Fetch Data</button>
+        <div id="dataContainer"></div>
+      </div>
+
+      <div class="card">
+        <h2>Area Statuses</h2>
+        <div id="areaStatuses"></div>
+      </div>
+
+      <div class="card">
+        <h2>Locations</h2>
+        <div id="map"></div>
+        <div id="locations"></div>
+      </div>
+
+      <div class="card">
+        <h2>Leaderboard</h2>
+        <input type="text" id="groupName" placeholder="Enter group name" />
+        <button class="button" onclick="fetchLeaderboard()">
+          Fetch Leaderboard
+        </button>
+        <div id="leaderboard"></div>
+      </div>
+    </div>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+    <script>
+      const API_BASE_URL = "http://localhost:5000/api";
+
+      async function fetchStats() {
+        const response = await fetch(`${API_BASE_URL}/stats`);
+        const stats = await response.json();
+        const statsContainer = document.getElementById("stats");
+        statsContainer.innerHTML = `
+                <p>Total Items: ${stats.totalItems}</p>
+                <p>Completed Items: ${stats.completedItems}</p>
+                <p>Reviewed Items: ${stats.reviewedItems}</p>
+                <p>Total Points: ${stats.totalPoints}</p>
+            `;
+        for (const [type, count] of Object.entries(stats.itemsByType)) {
+          statsContainer.innerHTML += `<p>${type}: ${count}</p>`;
+        }
+      }
+
+      async function fetchResponseTimes() {
+        const response = await fetch(`${API_BASE_URL}/response-times`);
+        const data = await response.json();
+        const ctx = document
+          .getElementById("responseTimeChart")
+          .getContext("2d");
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            datasets: [
+              {
+                label: "Jotihunt API",
+                data: data.jotihuntApiTimes.map((item) => ({
+                  x: new Date(item.timestamp),
+                  y: item.response_time_ms,
+                })),
+                borderColor: "rgb(75, 192, 192)",
+                tension: 0.1,
+              },
+              {
+                label: "Our API",
+                data: data.ourApiTimes.map((item) => ({
+                  x: new Date(item.timestamp),
+                  y: item.response_time_ms,
+                })),
+                borderColor: "rgb(255, 99, 132)",
+                tension: 0.1,
+              },
+            ],
+          },
+          options: {
+            scales: {
+              x: {
+                type: "time",
+                time: {
+                  unit: "minute",
+                },
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Response Time (ms)",
+                },
+              },
+            },
+          },
+        });
+      }
+
+      async function fetchData() {
+        const type = document.getElementById("dataType").value;
+        const response = await fetch(`${API_BASE_URL}/data/${type}`);
+        const data = await response.json();
+        const container = document.getElementById("dataContainer");
+        container.innerHTML = `
+                <table>
+                    <tr>
+                        <th>Title</th>
+                        <th>Assigned To</th>
+                        <th>Points</th>
+                        <th>Completed</th>
+                        <th>Reviewed</th>
+                        <th>Actions</th>
+                    </tr>
+                    ${data
+                      .map(
+                        (item) => `
+                        <tr>
+                            <td>${item.title}</td>
+                            <td>${item.assignedTo || "Unassigned"}</td>
+                            <td>${item.points}</td>
+                            <td>${item.completed ? "Yes" : "No"}</td>
+                            <td>${item.reviewed ? "Yes" : "No"}</td>
+                            <td>
+                                <button class="button" onclick="editItem(${
+                                  item.id
+                                })">Edit</button>
+                                <button class="button" onclick="viewContent(${
+                                  item.id
+                                })">View Content</button>
+                            </td>
+                        </tr>
+                    `
+                      )
+                      .join("")}
+                </table>
+            `;
+      }
+
+      async function fetchAreaStatuses() {
+        const response = await fetch(`${API_BASE_URL}/area-statuses`);
+        const statuses = await response.json();
+        const container = document.getElementById("areaStatuses");
+        container.innerHTML = `
+                <table>
+                    <tr>
+                        <th>Area</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                    ${statuses
+                      .map(
+                        (status) => `
+                        <tr>
+                            <td>${status.name}</td>
+                            <td>${status.status}</td>
+                            <td>${new Date(
+                              status.last_updated
+                            ).toLocaleString()}</td>
+                            <td>
+                                <button class="button" onclick="viewAreaHistory('${
+                                  status.name
+                                }')">View History</button>
+                            </td>
+                        </tr>
+                    `
+                      )
+                      .join("")}
+                </table>
+            `;
+      }
+
+      async function viewAreaHistory(areaName) {
+        const response = await fetch(
+          `${API_BASE_URL}/area-status-history/${areaName}`
+        );
+        const history = await response.json();
+        alert(
+          `History for ${areaName}:\n${history
+            .map(
+              (entry) =>
+                `${entry.status} - ${new Date(
+                  entry.timestamp
+                ).toLocaleString()}`
+            )
+            .join("\n")}`
+        );
+      }
+
+      async function fetchLocations() {
+        const response = await fetch(`${API_BASE_URL}/get-locations`);
+        const locations = await response.json();
+        const container = document.getElementById("locations");
+        container.innerHTML = `
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Last Updated</th>
+                    </tr>
+                    ${locations
+                      .map(
+                        (location) => `
+                        <tr>
+                            <td>${location.name}</td>
+                            <td>${location.description}</td>
+                            <td>${location.latitude}</td>
+                            <td>${location.longitude}</td>
+                            <td>${new Date(
+                              location.timestamp
+                            ).toLocaleString()}</td>
+                        </tr>
+                    `
+                      )
+                      .join("")}
+                </table>
+            `;
+
+        // Initialize Google Maps
+        const map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 52.3676, lng: 4.9041 },
+          zoom: 8,
+        });
+
+        // Add markers for each location
+        locations.forEach((location) => {
+          new google.maps.Marker({
+            position: { lat: location.latitude, lng: location.longitude },
+            map: map,
+            title: location.name,
+          });
+        });
+      }
+
+      async function fetchLeaderboard() {
+        const groupName = document.getElementById("groupName").value;
+        const response = await fetch(
+          `${API_BASE_URL}/leaderboard/${groupName}`
+        );
+        const leaderboard = await response.json();
+        const container = document.getElementById("leaderboard");
+        if (Array.isArray(leaderboard)) {
+          container.innerHTML = `
+                    <table>
+                        <tr>
+                            <th>Position</th>
+                            <th>Group Name</th>
+                            <th>Points</th>
+                            <th>Area</th>
+                            <th>Area Position</th>
+                        </tr>
+                        ${leaderboard
+                          .map(
+                            (entry) => `
+                            <tr>
+                                <td>${entry.position}</td>
+                                <td>${entry.groupName}</td>
+                                <td>${entry.points}</td>
+                                <td>${entry.area}</td>
+                                <td>${entry.areaPosition}</td>
+                            </tr>
+                        `
+                          )
+                          .join("")}
+                    </table>
+                `;
+        } else {
+          container.innerHTML = `
+                    <p>Group: ${leaderboard.groupName}</p>
+                    <p>Position: ${leaderboard.position}</p>
+                    <p>Points: ${leaderboard.points}</p>
+                    <p>Area: ${leaderboard.area}</p>
+                    <p>Area Position: ${leaderboard.areaPosition}</p>
+                `;
+        }
+      }
+
+      async function editItem(id) {
+        const response = await fetch(`${API_BASE_URL}/content/${id}`);
+        const item = await response.json();
+        const formHtml = `
+                <div class="edit-form">
+                    <input type="text" id="assignedTo" value="${
+                      item.assignedTo || ""
+                    }" placeholder="Assigned To">
+                    <input type="number" id="points" value="${
+                      item.points
+                    }" min="0">
+                    <select id="reviewed">
+                        <option value="0" ${
+                          !item.reviewed ? "selected" : ""
+                        }>Not Reviewed</option>
+                        <option value="1" ${
+                          item.reviewed ? "selected" : ""
+                        }>Reviewed</option>
+                    </select>
+                    <select id="completed">
+                        <option value="0" ${
+                          !item.completed ? "selected" : ""
+                        }>Not Completed</option>
+                        <option value="1" ${
+                          item.completed ? "selected" : ""
+                        }>Completed</option>
+                    </select>
+                    <button class="button" onclick="updateItem(${id})">Update</button>
+                </div>
+            `;
+        const container = document.getElementById("dataContainer");
+        container.innerHTML += formHtml;
+      }
+
+      async function updateItem(id) {
+        const assignedTo = document.getElementById("assignedTo").value;
+        const points = parseInt(document.getElementById("points").value);
+        const reviewed = parseInt(document.getElementById("reviewed").value);
+        const completed = parseInt(document.getElementById("completed").value);
+
+        const response = await fetch(`${API_BASE_URL}/update/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ assignedTo, points, reviewed, completed }),
+        });
+
+        if (response.ok) {
+          alert("Item updated successfully");
+          fetchData();
+        } else {
+          alert("Failed to update item");
+        }
+      }
+
+      async function viewContent(id) {
+        const response = await fetch(`${API_BASE_URL}/content/${id}`);
+        const content = await response.json();
+        alert(JSON.stringify(content, null, 2));
+      }
+
+      // Initialize the page
+      fetchStats();
+      // fetchResponseTimes();
+      fetchData();
+      fetchAreaStatuses();
+      fetchLocations();
+    </script>
+  </body>
+</html>
