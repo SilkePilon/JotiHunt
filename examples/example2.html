@@ -419,7 +419,7 @@
                       item.assignedTo || ""
                     }" placeholder="Assigned To">
                     <input type="number" id="points" value="${
-                      item.points
+                      item.points || 0
                     }" min="0">
                     <select id="reviewed">
                         <option value="0" ${
