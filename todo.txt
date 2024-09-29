@@ -1,3 +1,16 @@
 when asking for opdrachten only provide the title etc and not the whole message content
 save api response times to later show in a graph
 use AI to explain how to better complete hints and assignments
+
+geolocations of WIJ DOEN MEE assignment.
+every image in the banner frop top to right:
+Legoland Billund - bench
+Legoland Billund - dino
+Legoland Billund - lego ninjago ???? not sure
+Legoland Billund - poalr bears
+Legoland Billund - LEGOLAND Atlantis - lego figure with torch
+Legoland Billund - portier figure
+Legoland Billund - dragon
+
+xD alles is uit Legoland Billund
+
