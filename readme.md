@@ -2,6 +2,9 @@
 
 This is the backend for the Jotihunt IRL game. Jotihunt is an interactive, real-world game where participants complete tasks, solve hints, and follow live updates. This backend provides APIs to retrieve new game data (news, hints, and assignments) and enables users to share their live location, which can be displayed to other users.
 
+> [!WARNING]  
+> This project is still in development and may undergo breaking changes in a fast time frame.
+
 ## Features
 
 - **API for fetching game data**: News, hints, and assignments are fetched from Jotihunt's public API and stored in the local database.
@@ -82,7 +85,10 @@ Additionally, players can submit their current GPS location to the server, and t
 
 ## Frontend Examples & Recommendations
 
-Under the `examples/` directory you can find some simple examples that make full use of the API or you can see the demo (without API running) [here](https://silkepilon.github.io/OpenJotiHuntMap/example.html) Note these examples were made fast and are only made to visualize a use case for the API and we don't recommend using this for the game. We instead encourage you and your group to build your own beautiful dashboard using modern tools.
+Under the `examples/` directory you can find some simple examples that make full use of the API or you can see the demo (without API running) [here](https://silkepilon.github.io/OpenJotiHuntMap/example.html).
+
+> [!TIP]
+> These examples were made fast and are only made to visualize a use case for the API and we don't recommend using this for the game. We instead encourage you and your group to build your own beautiful dashboard using modern tools.
 
 ## Database Schema
 
@@ -617,4 +623,5 @@ Feel free to contribute to this project by submitting issues or pull requests.
 
 ---
 
-This project is built using `Express.js` and `SQLite3` for managing the backend, while data is fetched from Jotihunt's official API using `Axios`. The backend is designed to automatically retrieve and store game data every minute, allowing for real-time updates during gameplay. It also includes performance monitoring features to track API response times and AI-powered plan generation using the NVIDIA AI API.
+> [!NOTE]  
+> This project is built using `Express.js` and `SQLite3` for managing the backend, while data is fetched from Jotihunt's official API using `Axios`. The backend is designed to automatically retrieve and store game data every minute, allowing for real-time updates during gameplay. It also includes performance monitoring features to track API response times and AI-powered plan generation using the NVIDIA AI API.
