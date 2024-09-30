@@ -98,7 +98,7 @@ const NewsCard = ({ article, onUpdateArticle }) => {
         </CardFooter>
       </Card>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {/* <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{article.title}</DialogTitle>
@@ -169,7 +169,7 @@ const NewsCard = ({ article, onUpdateArticle }) => {
             <Button onClick={handleSave}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </>
   );
 };
@@ -182,7 +182,7 @@ const NewsCardList = () => {
   }, []);
 
   const fetchNews = async () => {
-    const response = await fetch("http://localhost:5000/api/news");
+    const response = await fetch("http://localhost:5000/api/data/news");
     const data = await response.json();
     setNews(sortNews(data));
   };
@@ -201,7 +201,7 @@ const NewsCardList = () => {
   const handleUpdateArticle = async (updatedArticle) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/news/${updatedArticle.id}`,
+        `http://localhost:5000/api/data/news/${updatedArticle.id}`,
         {
           method: "PUT",
           headers: {

@@ -255,12 +255,7 @@ export function PresetSave() {
             </DrawerDescription>{" "}
           </DrawerHeader>{" "}
           <div className="p-4 pb-0">
-<<<<<<< HEAD
-            {" "}
-            <LocationForm
-=======
             <LiveLocationForm
->>>>>>> de8656b (Make map fill screen, remove statistics and move card list to left sidebar)
               formData={formData}
               handleInputChange={handleInputChange}
               handleSubmit={handleSubmit}

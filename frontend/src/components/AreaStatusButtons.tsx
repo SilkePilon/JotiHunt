@@ -30,17 +30,22 @@ const AreaStatusButtons = () => {
   }, []);
 
   return (
-    <>
-      {areaStatuses.map((area) => (
-        <Button
-          key={area.name}
-          style={{ backgroundColor: statusColors[area.status] || "#cccccc" }}
-          variant="outline"
-        >
-          {area.name}
-        </Button>
-      ))}
-    </>
+    <div className="flex gap-1 text-card-foreground">
+      {areaStatuses.map(
+        (area) =>
+          area.status != statusColors.green && (
+            <Button
+              key={area.name}
+              style={{
+                backgroundColor: statusColors[area.status] || "#cccccc",
+              }}
+              variant="outline"
+            >
+              {area.name}
+            </Button>
+          )
+      )}
+    </div>
   );
 };
 

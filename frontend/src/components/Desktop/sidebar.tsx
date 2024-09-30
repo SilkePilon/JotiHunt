@@ -8,9 +8,12 @@ import PCMessageList from "./messageList";
 
 export default function PCSideBar() {
   return (
-    <div className="h-full py-6 w-fit">
-      <div className="grid h-full">
-        <div className="hidden flex-col space-y-4 sm:flex md:order-2">
+    <div className="bg-card text-card-foreground h-full w-fit pointer-events-auto z-20">
+      <div className="grid h-full py-6">
+        <div className="hidden flex-col sm:flex md:order-2">
+          <Card className="p-2">
+            <AreaStatusButtons />
+          </Card>
           <Card className="">
             <CardContent className="flex gap-4 p-5 pb-2">
               <Tabs>
@@ -40,11 +43,6 @@ export default function PCSideBar() {
           </Card>
 
           <Separator style={{ height: "2px" }} />
-          <Card>
-            <CardContent>
-              <AreaStatusButtons />
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
