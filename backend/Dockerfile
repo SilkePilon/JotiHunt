@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as the base image
-FROM node:18
+FROM --platform=$BUILDPLATFORM node:18-alpine
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Install SQLite3
-RUN apt-get update && apt-get install -y sqlite3
+RUN apk add --no-cache sqlite
 
 # Expose the port the app runs on
 EXPOSE 5000
