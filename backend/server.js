@@ -11,13 +11,22 @@ const { OpenAI } = require("openai");
 const cheerio = require("cheerio");
 const stringSimilarity = require("string-similarity");
 const util = require("util");
+const term = require("terminal-kit").terminal;
+// backup manager
+const { checkBackupSettings } = require("./backupUtils");
+
 require("dotenv").config();
 
-const openai = new OpenAI({
-  apiKey: process.env.NVIDIA_API_KEY,
-  baseURL: "https://integrate.api.nvidia.com/v1",
-});
+console.clear();
 
+if (process.env.NVIDIA_API_KEY) {
+  const openai = new OpenAI({
+    apiKey: process.env.NVIDIA_API_KEY,
+    baseURL: "https://integrate.api.nvidia.com/v1",
+  });
+} else {
+  term.yellow("NVIDIA_API_KEY not provided. AI features will be disabled.\n");
+}
 const app = express();
 const PORT = process.env.PORT || 5000;
 const DELAY = process.env.DELAY || 60000;
@@ -28,15 +37,31 @@ app.use(cors());
 const MAIN_DB_PATH = path.join(__dirname, "main.db");
 
 let mainDb;
-
-// Initialize databases
 async function initDatabase() {
+  // Start a progress bar with options
+  const progressBar = term.progressBar({
+    width: 80,
+    title: "Initializing Database:",
+    eta: true,
+    percent: true,
+    items: 8, // Number of tables to be created
+  });
+
+  // Function to simulate table creation with progress bar update
+  async function createTable(query) {
+    await mainDb.exec(query); // Execute the query
+    await new Promise((r) => setTimeout(r, 200));
+    progressBar.itemDone(); // Update the progress bar
+  }
+
+  // Open the database
   mainDb = await open({
     filename: MAIN_DB_PATH,
     driver: sqlite3.Database,
   });
 
-  await mainDb.exec(`
+  // Create each table and update the progress bar
+  await createTable(`
     CREATE TABLE IF NOT EXISTS items (
       id INTEGER PRIMARY KEY,
       title TEXT,
@@ -50,14 +75,14 @@ async function initDatabase() {
     )
   `);
 
-  await mainDb.exec(`
+  await createTable(`
     CREATE TABLE IF NOT EXISTS content (
       id INTEGER PRIMARY KEY,
       message TEXT
     )
   `);
 
-  await mainDb.exec(`
+  await createTable(`
     CREATE TABLE IF NOT EXISTS locations (
       id TEXT PRIMARY KEY,
       name TEXT,
@@ -68,7 +93,7 @@ async function initDatabase() {
     )
   `);
 
-  await mainDb.exec(`
+  await createTable(`
     CREATE TABLE IF NOT EXISTS jotihunt_api_response_times (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       timestamp TEXT,
@@ -76,7 +101,7 @@ async function initDatabase() {
     )
   `);
 
-  await mainDb.exec(`
+  await createTable(`
     CREATE TABLE IF NOT EXISTS our_api_response_times (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       endpoint TEXT,
@@ -85,7 +110,7 @@ async function initDatabase() {
     )
   `);
 
-  await mainDb.exec(`
+  await createTable(`
     CREATE TABLE IF NOT EXISTS plans (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       item_id INTEGER,
@@ -96,7 +121,7 @@ async function initDatabase() {
     )
   `);
 
-  await mainDb.exec(`
+  await createTable(`
     CREATE TABLE IF NOT EXISTS current_area_statuses (
       name TEXT PRIMARY KEY,
       status TEXT,
@@ -104,7 +129,7 @@ async function initDatabase() {
     )
   `);
 
-  await mainDb.exec(`
+  await createTable(`
     CREATE TABLE IF NOT EXISTS area_status_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       area_id TEXT,
@@ -112,6 +137,10 @@ async function initDatabase() {
       timestamp TEXT
     )
   `);
+
+  progressBar.stop();
+  term("\n");
+  await new Promise((r) => setTimeout(r, 200));
 }
 
 // Fetch data from Jotihunt API
@@ -294,6 +323,9 @@ app.get("/api/area-status-history/:areaName", async (req, res) => {
 });
 
 app.get("/api/generate-plan/:id", async (req, res) => {
+  if (!process.env.NVIDIA_API_KEY) {
+    return res.status(400).json({ error: "API key not provided" });
+  }
   const { id } = req.params;
 
   try {
@@ -1161,14 +1193,34 @@ app.put("/api/update/:id", async (req, res) => {
 });
 
 // Initialize databases and start server
-initDatabase().then(() => {
+async function startServer() {
+  await checkBackupSettings();
+
+  // Initialize databases and start server
+  await initDatabase();
+
+  // Hide cursor
+  term("\x1B[?25l");
+
   app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    term.green(`\nServer is running on http://localhost:${PORT}\n\n`);
     updateDatabase(); // Initial data fetch
     updateAreaStatuses(); // Initial area status fetch
 
     // Set up periodic updates
     setInterval(updateDatabase, DELAY); // Fetch every minute
     setInterval(updateAreaStatuses, DELAY); // Update area statuses every minute
+
+    term.spinner("impulse");
+    term("    Waiting for requests...\n ");
   });
+}
+
+process.on("SIGINT", () => {
+  term("\x1B[?25h"); // Show cursor
+  term.red("\nGracefully shutting down...\n");
+  process.exit();
 });
+
+// Call the async function to start the server
+startServer().catch(term.red);
