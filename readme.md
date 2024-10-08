@@ -60,11 +60,27 @@ Additionally, players can submit their current GPS location to the server, and t
 
 ## Installation
 
+#### Using Docker (recommended)
+
+The following platforms are supported:
+[x] Windows
+[x] Linux (arm/x86)
+[x] Raspberry pi (4/5)
+
+1. Run the following command in your terminal:
+
+```bash
+docker run ghcr.io/silkepilon/jotihunt:main
+```
+
+#### Manual Installation (dev)
+
 1. Clone the repository:
 
    ```bash
    git clone https://github.com/SilkePilon/JotiHunt.git
    ```
+
 2. Install the dependencies:
 
    ```bash
@@ -72,6 +88,7 @@ Additionally, players can submit their current GPS location to the server, and t
    cd backend
    npm install
    ```
+
 3. Set up environment variables:
    Create a `.env` file in the root directory or rename `.env.example` to `.env` and add/change the following:
 
@@ -87,11 +104,13 @@ Additionally, players can submit their current GPS location to the server, and t
    # the backup interval in minutes (default 60) only used when ENABLE_BACKUPS is true
    BACKUP_INTERVAL=60
    ```
+
 4. Run the server:
 
    ```bash
    npm start
    ```
+
 5. The server will start at `http://localhost:5000`.
 6. Ensure your SQLite databases (`main.db`) are set up correctly. The database schemas are initialized automatically when the server starts.
 
@@ -118,6 +137,7 @@ As part of this project, we will be making our version Jotihunt database open-so
    - Studying scouting strategies
    - Analyzing game patterns
    - Improving future Jotihunt performances
+
 3. **Community Contribution**: This initiative aims to foster knowledge sharing and collaboration within the Jotihunt community.
 4. **Educational Resource**: The database can serve as a valuable learning tool for groups preparing for future Jotihunt events.
 
@@ -131,24 +151,31 @@ The backend uses SQLite databases with the following main tables:
 1. **items**: Stores game items (news, hints, assignments)
 
    - Columns: id, title, type, publish_at, retrieved_at, assignedTo, completed, reviewed, points
+
 2. **content**: Stores the content of game items
 
    - Columns: id, message
+
 3. **locations**: Stores user-shared locations
 
    - Columns: id, name, description, latitude, longitude, timestamp
+
 4. **current_area_statuses**: Stores the current status of each area
 
    - Columns: name, status, last_updated
+
 5. **area_status_history**: Stores the history of area status changes
 
    - Columns: id, area_id, status, timestamp
+
 6. **jotihunt_api_response_times**: Tracks response times of the Jotihunt API
 
    - Columns: id, timestamp, response_time_ms
+
 7. **our_api_response_times**: Tracks response times of our own API endpoints
 
    - Columns: id, endpoint, timestamp, response_time_ms
+
 8. **plans**: Stores AI-generated plans for hints and assignments
 
    - Columns: id, item_id, item_title, plan_content, created_at
