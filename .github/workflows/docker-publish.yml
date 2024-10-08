@@ -10,7 +10,7 @@ on:
     branches: ["main"]
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: ghcr.io # Or Docker Hub if you're using Docker Hub
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -55,11 +55,11 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v5.0.0
         with:
-          context: ./backend
+          context: ./backend # Path to your Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/arm64,windows/amd64 # Add both Windows and Raspberry Pi 4 platforms here
+          platforms: linux/arm64,linux/amd64 # Ensure ARM64 and AMD64 platforms
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
