@@ -60,21 +60,133 @@ Additionally, players can submit their current GPS location to the server, and t
 
 ## Installation
 
-#### Using Docker (recommended)
+### Using Docker (recommended)
 
 The following platforms are supported:
 
 - [x] Windows
 - [x] Linux (arm/x86)
-- [x] Raspberry pi (4/5)
+- [x] Raspberry Pi (4/5)
 
-1. Run the following command in your terminal:
+#### 1. Pull and Run the Docker Image
+
+To start the Jotihunt container, run the following command in your terminal:
 
 ```bash
-docker run --restart=always -d ghcr.io/silkepilon/jotihunt:main
+docker run --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
 ```
 
-If you wish to see the logs of the api you can run the same command without the `-d` option.
+This command does the following:
+
+- `--name jotihunt-container`: Assigns a name to your container for easy reference
+- `--restart=always`: Ensures the container restarts automatically if it crashes or if the Docker daemon restarts
+- `-d`: Runs the container in detached mode (in the background)
+
+#### 2. Viewing Logs
+
+To view the logs of the running container:
+
+```bash
+docker logs jotihunt-container
+```
+
+To follow the logs in real-time:
+
+```bash
+docker logs -f jotihunt-container
+```
+
+#### 3. Stopping the Container
+
+To stop the running container:
+
+```bash
+docker stop jotihunt-container
+```
+
+#### 4. Starting a Stopped Container
+
+To start a stopped container:
+
+```bash
+docker start jotihunt-container
+```
+
+#### 5. Removing the Container
+
+To remove the container (this will delete all data within the container):
+
+```bash
+docker rm jotihunt-container
+```
+
+Add `-f` if the container is running:
+
+```bash
+docker rm -f jotihunt-container
+```
+
+#### 6. Updating the Container
+
+To update to the latest version:
+
+```bash
+docker pull ghcr.io/silkepilon/jotihunt:main
+docker stop jotihunt-container
+docker rm jotihunt-container
+docker run --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+#### 7. Advanced Options
+
+##### Port Mapping
+
+If the application inside the container exposes a port, you can map it to a host port:
+
+```bash
+docker run -p 8080:80 --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+This maps port 80 in the container to port 8080 on your host.
+
+##### Volume Mounting
+
+To persist data outside the container:
+
+```bash
+docker run -v /path/on/host:/path/in/container --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+Replace `/path/on/host` and `/path/in/container` with appropriate paths.
+
+##### Environment Variables
+
+To pass environment variables:
+
+```bash
+docker run -e VAR_NAME=value --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+##### Resource Limits
+
+To limit CPU and memory usage:
+
+```bash
+docker run --cpus=2 --memory=2g --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+This limits the container to 2 CPUs and 2GB of RAM.
+
+#### 8. Troubleshooting
+
+If you encounter issues:
+
+1. Check the logs: `docker logs jotihunt-container`
+2. Ensure you have the latest image: `docker pull ghcr.io/silkepilon/jotihunt:main`
+3. Try removing and recreating the container
+4. Verify your Docker installation is up-to-date
+
+For more detailed information, refer to the official Docker documentation or the project's GitHub repository.
 
 #### Manual Installation (dev)
 
