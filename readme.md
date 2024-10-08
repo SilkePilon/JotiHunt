@@ -63,9 +63,10 @@ Additionally, players can submit their current GPS location to the server, and t
 #### Using Docker (recommended)
 
 The following platforms are supported:
-[x] Windows
-[x] Linux (arm/x86)
-[x] Raspberry pi (4/5)
+
+- [x] Windows
+- [x] Linux (arm/x86)
+- [x] Raspberry pi (4/5)
 
 1. Run the following command in your terminal:
 
