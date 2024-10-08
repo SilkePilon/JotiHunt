@@ -12,21 +12,31 @@ const cheerio = require("cheerio");
 const stringSimilarity = require("string-similarity");
 const util = require("util");
 const term = require("terminal-kit").terminal;
+const getPixels = require("get-pixels");
 // backup manager
 const { checkBackupSettings } = require("./backupUtils");
+const { url } = require("inspector");
 
 require("dotenv").config();
 
 console.clear();
 
-if (process.env.NVIDIA_API_KEY) {
-  const openai = new OpenAI({
-    apiKey: process.env.NVIDIA_API_KEY,
-    baseURL: "https://integrate.api.nvidia.com/v1",
-  });
-} else {
-  term.yellow("NVIDIA_API_KEY not provided. AI features will be disabled.\n");
+let openai;
+
+async function initializeAI() {
+  if (process.env.NVIDIA_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.NVIDIA_API_KEY,
+      baseURL: "https://integrate.api.nvidia.com/v1",
+    });
+  } else {
+    await term.yellow(
+      "NVIDIA_API_KEY not provided. AI features will be disabled.\n"
+    );
+  }
 }
+
+initializeAI();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const DELAY = process.env.DELAY || 60000;
@@ -39,10 +49,10 @@ const MAIN_DB_PATH = path.join(__dirname, "main.db");
 let mainDb;
 async function initDatabase() {
   // Start a progress bar with options
-  const progressBar = term.progressBar({
+  const progressBar = await term.progressBar({
     width: 80,
     title: "Initializing Database:",
-    eta: true,
+    eta: false,
     percent: true,
     items: 8, // Number of tables to be created
   });
@@ -50,8 +60,8 @@ async function initDatabase() {
   // Function to simulate table creation with progress bar update
   async function createTable(query) {
     await mainDb.exec(query); // Execute the query
-    await new Promise((r) => setTimeout(r, 200));
-    progressBar.itemDone(); // Update the progress bar
+    await new Promise((r) => setTimeout(r, 20));
+    await progressBar.itemDone(); // Update the progress bar
   }
 
   // Open the database
@@ -138,8 +148,8 @@ async function initDatabase() {
     )
   `);
 
-  progressBar.stop();
-  term("\n");
+  await progressBar.stop();
+  await term("\n");
   await new Promise((r) => setTimeout(r, 200));
 }
 
@@ -1200,9 +1210,9 @@ async function startServer() {
   await initDatabase();
 
   // Hide cursor
-  term("\x1B[?25l");
+  await term("\x1B[?25l");
 
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     term(`\nServer is running on http://localhost:${PORT}\n\n`);
     updateDatabase(); // Initial data fetch
     updateAreaStatuses(); // Initial area status fetch
@@ -1211,18 +1221,21 @@ async function startServer() {
     setInterval(updateDatabase, DELAY); // Fetch every minute
     setInterval(updateAreaStatuses, DELAY); // Update area statuses every minute
 
-    term.drawImage(
-      "https://github.com/SilkePilon/JotiHunt/blob/main/assets/fox_lego.png?raw=true"
-    );
+    await term.spinner("impulse");
+    await term("    Let the game begin! \n");
 
-    term.spinner("impulse");
-    term("    Let the game begin!\n ");
+    await term.drawImage(
+      "https://github.com/SilkePilon/JotiHunt/blob/main/assets/dwa.png?raw=true",
+      {
+        shrink: { width: term.width, height: term.height * 1 },
+      }
+    );
   });
 }
 
-process.on("SIGINT", () => {
-  term("\x1B[?25h"); // Show cursor
-  term.red("\nGracefully shutting down...\n");
+process.on("SIGINT", async () => {
+  await term("\x1B[?25h"); // Show cursor
+  await term.red("\nGracefully shutting down...\n");
   process.exit();
 });
 
