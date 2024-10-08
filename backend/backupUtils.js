@@ -11,17 +11,19 @@ async function checkBackupSettings() {
   const backupLocation = process.env.BACKUP_LOCATION;
 
   if (!enableBackups) {
-    term.red(
+    await term.red(
       "Backups are disabled. Set ENABLE_BACKUPS=true in .env to enable.\n"
     );
     return;
   }
 
   if (!backupLocation) {
-    term.yellow("Backup location not set. Please select a backup location:\n");
+    await term.yellow(
+      "Backup location not set. Please select a backup location:\n"
+    );
     await selectBackupLocation();
   } else {
-    term.green(`Backups enabled. Backup location: ${backupLocation}\n`);
+    await term.green(`Backups enabled. Backup location: ${backupLocation}\n`);
     scheduleBackups(backupLocation);
   }
 }
@@ -41,7 +43,7 @@ async function selectBackupLocation() {
 
   try {
     const response = await term.singleColumnMenu(items, menuOptions).promise;
-    term.clear(); // Clear the screen after selection
+    await term.clear(); // Clear the screen after selection
 
     if (response.selectedIndex === 0) {
       const customPath = await term.inputField({
@@ -49,23 +51,23 @@ async function selectBackupLocation() {
         cancelable: true,
         keyBindings: { CTRL_C: "cancel" },
       }).promise;
-      term.clear(); // Clear the screen after input
+      await term.clear(); // Clear the screen after input
       if (await pathExists(customPath)) {
         await updateEnvFile("BACKUP_LOCATION", customPath);
         scheduleBackups(customPath);
       } else {
-        term.red("Invalid path. Please try again.\n");
+        await term.red("Invalid path. Please try again.\n");
         await selectBackupLocation();
       }
     } else if (response.selectedIndex === 1) {
       const drives = await listUsbDrives();
       if (drives.length === 0) {
-        term.red(
+        await term.red(
           "No USB drives found. Please connect a USB drive and try again.\n"
         );
         await selectBackupLocation();
       } else {
-        term.green("Select a USB drive:\n");
+        await term.green("Select a USB drive:\n");
         const driveOptions = drives.map(
           (drive) => `${drive.name} (${drive.size} GB) - ${drive.path}`
         );
@@ -73,20 +75,20 @@ async function selectBackupLocation() {
           driveOptions,
           menuOptions
         ).promise;
-        term.clear(); // Clear the screen after USB drive selection
+        await term.clear(); // Clear the screen after USB drive selection
         const selectedDrive = drives[driveResponse.selectedIndex];
         await updateEnvFile("BACKUP_LOCATION", selectedDrive.path);
         scheduleBackups(selectedDrive.path);
       }
     } else if (response.selectedIndex === 2) {
-      term.yellow("Disabling backups\n");
+      await term.yellow("Disabling backups\n");
       await updateEnvFile("ENABLE_BACKUPS", "false");
-      term.green("Backups disabled\n");
+      await term.green("Backups disabled\n");
     }
   } catch (error) {
     if (error.message === "Canceled") {
-      term.yellow("\nOperation canceled.\n");
-      term.processExit(0);
+      await term.yellow("\nOperation canceled.\n");
+      await term.processExit(0);
     } else {
       throw error;
     }
@@ -126,7 +128,7 @@ async function listUsbDrives() {
         });
     }
   } catch (error) {
-    term.red(`Error listing USB drives: ${error}\n`);
+    await term.red(`Error listing USB drives: ${error}\n`);
     return [];
   }
 }
@@ -145,7 +147,7 @@ async function updateEnvFile(key, value) {
   }
 
   await fs.writeFile(envPath, envContent.trim() + "\n");
-  term.green(`Updated .env file with ${key}=${value}\n`);
+  await term.green(`Updated .env file with ${key}=${value}\n`);
 }
 
 async function scheduleBackups(backupLocation) {
@@ -177,13 +179,13 @@ async function scheduleBackups(backupLocation) {
       try {
         // Copy main.db to the backups folder with the date-named file
         await fs.copyFile(dbFilePath, backupFilePath);
-        term.green(`Backup created: ${backupFilePath}\n`);
+        await term.green(`Backup created: ${backupFilePath}\n`);
 
         // Create or update the latest backup to latest.db
         await fs.copyFile(backupFilePath, latestBackupPath);
-        term.green(`Latest backup updated: ${latestBackupPath}\n`);
+        await term.green(`Latest backup updated: ${latestBackupPath}\n`);
       } catch (error) {
-        term.red(`Error creating backup: ${error.message}\n`);
+        await term.red(`Error creating backup: ${error.message}\n`);
       }
     };
 
@@ -193,7 +195,9 @@ async function scheduleBackups(backupLocation) {
     // Schedule backups based on the interval specified in the .env file
     setInterval(createBackup, backupInterval * 60 * 1000); // Convert minutes to milliseconds
   } catch (error) {
-    term.red(`Error scheduling backups! Does the backup location exist?\n`);
+    await term.red(
+      `Error scheduling backups! Does the backup location exist?\n`
+    );
   }
 }
 

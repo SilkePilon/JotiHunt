@@ -1213,7 +1213,7 @@ async function startServer() {
   await term("\x1B[?25l");
 
   app.listen(PORT, async () => {
-    term(`\nServer is running on http://localhost:${PORT}\n\n`);
+    term(`\nServer is running on http://localhost:${PORT}\n\n\n`);
     updateDatabase(); // Initial data fetch
     updateAreaStatuses(); // Initial area status fetch
 
@@ -1222,7 +1222,7 @@ async function startServer() {
     setInterval(updateAreaStatuses, DELAY); // Update area statuses every minute
 
     await term.spinner("impulse");
-    await term("    Let the game begin! \n");
+    await term(" Let the game begin! \n");
 
     await term.drawImage(
       "https://github.com/SilkePilon/JotiHunt/blob/main/assets/dwa.png?raw=true",
@@ -1230,6 +1230,8 @@ async function startServer() {
         shrink: { width: term.width, height: term.height * 1 },
       }
     );
+
+    await term("     Yes this is a fox....");
   });
 }
 
