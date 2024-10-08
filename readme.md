@@ -188,7 +188,7 @@ If you encounter issues:
 
 For more detailed information, refer to the official Docker documentation or the project's GitHub repository.
 
-#### Manual Installation (dev)
+### Manual Installation (dev)
 
 1. Clone the repository:
 
