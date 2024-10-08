@@ -59,7 +59,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm64/v8,windows/amd64,windows/386,darwin/amd64,darwin/arm64,linux/aarch64
+          platforms: linux/arm64,windows/amd64 # Add both Windows and Raspberry Pi 4 platforms here
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
