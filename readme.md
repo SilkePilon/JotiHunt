@@ -62,6 +62,9 @@ Additionally, players can submit their current GPS location to the server, and t
 
 ### Using Docker (recommended)
 
+> [!WARNING]
+> Docker support is currently a work in progress. Some features will not work as intended.
+
 The following platforms are supported:
 
 - [x] Windows
