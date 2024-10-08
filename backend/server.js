@@ -1212,7 +1212,7 @@ async function startServer() {
   // Hide cursor
   await term("\x1B[?25l");
 
-  app.listen(PORT, async () => {
+  app.listen(PORT, "0.0.0.0", async () => {
     term(`\nServer is running on http://localhost:${PORT}\n\n\n`);
     updateDatabase(); // Initial data fetch
     updateAreaStatuses(); // Initial area status fetch
