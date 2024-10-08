@@ -71,8 +71,10 @@ The following platforms are supported:
 1. Run the following command in your terminal:
 
 ```bash
-docker run ghcr.io/silkepilon/jotihunt:main
+docker run --restart=always -d ghcr.io/silkepilon/jotihunt:main
 ```
+
+If you wish to see the logs of the api you can run the same command without the `-d` option.
 
 #### Manual Installation (dev)
 
