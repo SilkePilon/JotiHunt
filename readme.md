@@ -189,8 +189,6 @@ If you encounter issues:
 3. Try removing and recreating the container
 4. Verify your Docker installation is up-to-date
 
-For more detailed information, refer to the official Docker documentation or the project's GitHub repository.
-
 ### Manual Installation (dev)
 
 1. Clone the repository:
