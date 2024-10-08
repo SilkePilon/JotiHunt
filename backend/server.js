@@ -1203,7 +1203,7 @@ async function startServer() {
   term("\x1B[?25l");
 
   app.listen(PORT, () => {
-    term.green(`\nServer is running on http://localhost:${PORT}\n\n`);
+    term(`\nServer is running on http://localhost:${PORT}\n\n`);
     updateDatabase(); // Initial data fetch
     updateAreaStatuses(); // Initial area status fetch
 
@@ -1211,8 +1211,12 @@ async function startServer() {
     setInterval(updateDatabase, DELAY); // Fetch every minute
     setInterval(updateAreaStatuses, DELAY); // Update area statuses every minute
 
+    term.drawImage(
+      "https://github.com/SilkePilon/JotiHunt/blob/main/assets/fox_lego.png?raw=true"
+    );
+
     term.spinner("impulse");
-    term("    Waiting for requests...\n ");
+    term("    Let the game begin!\n ");
   });
 }
 

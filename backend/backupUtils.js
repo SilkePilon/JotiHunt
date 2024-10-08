@@ -149,50 +149,52 @@ async function updateEnvFile(key, value) {
 }
 
 async function scheduleBackups(backupLocation) {
-  term.green(`Scheduling backups to ${backupLocation}\n`);
+  try {
+    // Load the backup interval from the environment settings
+    const envSettings = await loadEnvSettings();
+    const backupInterval = parseInt(envSettings.BACKUP_INTERVAL) || 60; // Default to 60 minutes if not set
 
-  // Load the backup interval from the environment settings
-  const envSettings = await loadEnvSettings();
-  const backupInterval = parseInt(envSettings.BACKUP_INTERVAL) || 60; // Default to 60 minutes if not set
+    const backupFolder = path.join(backupLocation, "database_backup/backups");
+    const latestBackupPath = path.join(
+      backupLocation,
+      "database_backup/latest.db"
+    );
+    const dbFilePath = path.join(__dirname, "main.db");
 
-  const backupFolder = path.join(backupLocation, "database_backup/backups");
-  const latestBackupPath = path.join(
-    backupLocation,
-    "database_backup/latest.db"
-  );
-  const dbFilePath = path.join(__dirname, "main.db");
+    // Log the path of the main.db file for debugging
+    term.green(`Source DB path: ${dbFilePath}\n`);
 
-  // Log the path of the main.db file for debugging
-  term.green(`Source DB path: ${dbFilePath}\n`);
+    // Create the backup directory if it doesn't exist
+    await fs.mkdir(backupFolder, { recursive: true });
 
-  // Create the backup directory if it doesn't exist
-  await fs.mkdir(backupFolder, { recursive: true });
+    // Function to create a backup
+    const createBackup = async () => {
+      // Get today's date in the format of dd-MM-yyyy
+      const today = format(new Date(), "dd-MM-yyyy"); // Changed from 'dd/MM/yyyy' to 'dd-MM-yyyy'
+      const backupFileName = `${today}.db`;
+      const backupFilePath = path.join(backupFolder, backupFileName);
 
-  // Function to create a backup
-  const createBackup = async () => {
-    // Get today's date in the format of dd-MM-yyyy
-    const today = format(new Date(), "dd-MM-yyyy"); // Changed from 'dd/MM/yyyy' to 'dd-MM-yyyy'
-    const backupFileName = `${today}.db`;
-    const backupFilePath = path.join(backupFolder, backupFileName);
+      try {
+        // Copy main.db to the backups folder with the date-named file
+        await fs.copyFile(dbFilePath, backupFilePath);
+        term.green(`Backup created: ${backupFilePath}\n`);
 
-    try {
-      // Copy main.db to the backups folder with the date-named file
-      await fs.copyFile(dbFilePath, backupFilePath);
-      term.green(`Backup created: ${backupFilePath}\n`);
+        // Create or update the latest backup to latest.db
+        await fs.copyFile(backupFilePath, latestBackupPath);
+        term.green(`Latest backup updated: ${latestBackupPath}\n`);
+      } catch (error) {
+        term.red(`Error creating backup: ${error.message}\n`);
+      }
+    };
 
-      // Create or update the latest backup to latest.db
-      await fs.copyFile(backupFilePath, latestBackupPath);
-      term.green(`Latest backup updated: ${latestBackupPath}\n`);
-    } catch (error) {
-      term.red(`Error creating backup: ${error.message}\n`);
-    }
-  };
+    // Create an initial backup immediately
+    await createBackup();
 
-  // Create an initial backup immediately
-  await createBackup();
-
-  // Schedule backups based on the interval specified in the .env file
-  setInterval(createBackup, backupInterval * 60 * 1000); // Convert minutes to milliseconds
+    // Schedule backups based on the interval specified in the .env file
+    setInterval(createBackup, backupInterval * 60 * 1000); // Convert minutes to milliseconds
+  } catch (error) {
+    term.red(`Error scheduling backups! Does the backup location exist?\n`);
+  }
 }
 
 async function pathExists(path) {
