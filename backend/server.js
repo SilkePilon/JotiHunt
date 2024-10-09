@@ -29,7 +29,7 @@ if (cluster.isMaster) {
 
   // Fork workers
   for (let i = 0; i < numCPUs; i++) {
-    term("Creating new worker, ", i, "\n");
+    term("Creating new worker, ", i, "\n")
     cluster.fork();
   }
 
