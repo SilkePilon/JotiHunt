@@ -18,8 +18,13 @@ const cokieParser = require("cookie-parser");
 const fs = require("fs").promises;
 const { checkBackupSettings } = require("./backupUtils");
 
+// load .env file
 require("dotenv").config();
+
+// get total available cpu cores
 const numCPUs = os.cpus().length;
+
+// path to the main database file
 const MAIN_DB_PATH = path.join(__dirname, "main.db");
 
 console.clear();
@@ -210,7 +215,11 @@ async function runMaster() {
   console.log("Starting master process...");
 
   try {
-    const selectedCores = await selectCores(); // Assume this is a predefined function
+    if (!process.env.NUM_CORES) {
+      var selectedCores = await selectCores();
+    } else {
+      var selectedCores = process.env.NUM_CORES;
+    }
     console.log(`Using ${selectedCores} core${selectedCores === 1 ? "" : "s"}`);
 
     await checkBackupSettings(); // Assume this is a predefined function
@@ -219,7 +228,7 @@ async function runMaster() {
     // Create a progress bar
     const progressBar = term.progressBar({
       width: 80,
-      title: "Creating workers:",
+      title: `Creating workers (${selectedCores}): `,
       eta: true,
       percent: true,
       items: selectedCores,
@@ -235,7 +244,7 @@ async function runMaster() {
         });
       });
 
-      await delay(500); // Delay for 1 second between creating workers
+      await delay(500); // Delay for 0.5 second between creating workers
     }
 
     progressBar.stop(); // Stop the progress bar after all workers are created
@@ -254,23 +263,12 @@ async function runMaster() {
       });
     });
 
-    term(`Server is running on http://localhost:${process.env.PORT}`);
+    term(`Server is running on http://localhost:${process.env.PORT}\n`);
   } catch (error) {
     console.error("Error in master process:", error);
     process.exit(1);
   }
 }
-
-function exitHandler() {
-  term.yellow("\nOperation canceled.\n");
-  term.processExit(0);
-}
-
-term.on("key", (name, matches, data) => {
-  if (name === "CTRL_C") {
-    exitHandler();
-  }
-});
 
 async function runWorker() {
   let openai;
@@ -395,6 +393,7 @@ async function runWorker() {
   // Middleware to measure API response time
   function measureResponseTime(req, res, next) {
     // Check if the request origin is allowed
+
     const origin = req.get("Origin");
     const isAllowedOrigin = isOriginAllowed(origin);
 
