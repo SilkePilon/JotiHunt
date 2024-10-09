@@ -26,21 +26,40 @@ const numCPUs = os.cpus().length;
 const MAIN_DB_PATH = path.join(__dirname, "main.db");
 
 console.clear();
-if (cluster.isMaster) {
-  console.clear();
+async function runMaster() {
+  console.log("Starting master process...");
+  
+  try {
+    await checkBackupSettings();
+    
+    // Fork workers
+    for (let i = 0; i < numCPUs; i++) {
+      await new Promise(resolve => {
+        const worker = cluster.fork();
+        worker.on('online', () => {
+          term(`Creating new worker, ${i}\n`);
+          resolve();
+        });
+      });
+    }
 
-  // Fork workers
-  for (let i = 0; i < numCPUs; i++) {
-    term("Creating new worker, ", i, "\n")
-    cluster.fork();
+    cluster.on("exit", async (worker, code, signal) => {
+      console.log(`Worker ${worker.process.pid} died`);
+      // Replace the dead worker
+      await new Promise(resolve => {
+        const newWorker = cluster.fork();
+        newWorker.on('online', () => {
+          console.log(`New worker ${newWorker.process.pid} started`);
+          resolve();
+        });
+      });
+    });
+  } catch (error) {
+    console.error("Error in master process:", error);
+    process.exit(1);
   }
-
-  cluster.on("exit", (worker, code, signal) => {
-    console.log(`Worker ${worker.process.pid} died`);
-    // Replace the dead worker
-    cluster.fork();
-  });
-} else {
+}
+async function runWorker() {
   let openai;
 
   async function initializeAI() {
@@ -283,25 +302,8 @@ if (cluster.isMaster) {
     const isAllowedOrigin = isOriginAllowed(origin);
 
     if (!isAllowedOrigin) {
-      // If the CF_Session cookie is not present or the origin is not allowed, send an error response
       return res.status(401).json({ error: 'Authentication required or origin not allowed' });
     }
-
-    // const startTime = performance.now();
-
-    // res.on("finish", async () => {
-    //   const endTime = performance.now();
-    //   const responseTimeMs = endTime - startTime;
-
-    //   try {
-    //     await runQuery(
-    //       `INSERT INTO our_api_response_times (endpoint, timestamp, response_time_ms) VALUES (?, ?, ?)`,
-    //       [req.path, new Date().toISOString(), responseTimeMs]
-    //     );
-    //   } catch (error) {
-    //     console.error("Error recording API response time:", error);
-    //   }
-    // });
 
     next();
   }
@@ -1325,4 +1327,10 @@ if (cluster.isMaster) {
 
   // Call the async function to start the server
   startServer().catch(term.red);
+}
+
+if (cluster.isMaster) {
+  runMaster().catch(console.error);
+} else {
+  runWorker().catch(console.error);
 }
