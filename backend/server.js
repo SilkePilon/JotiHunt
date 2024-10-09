@@ -29,6 +29,7 @@ if (cluster.isMaster) {
 
   // Fork workers
   for (let i = 0; i < numCPUs; i++) {
+    term("Creating new worker, ", i, "\n");
     cluster.fork();
   }
 
@@ -183,7 +184,7 @@ if (cluster.isMaster) {
   }
 
   async function runQuery(query, params = []) {
-    let retries = 3;
+    let retries = 25;
     while (retries > 0) {
       try {
         return await mainDb.run(query, params);
