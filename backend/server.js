@@ -26,12 +26,129 @@ const numCPUs = os.cpus().length;
 const MAIN_DB_PATH = path.join(__dirname, "main.db");
 
 console.clear();
+
+
+let mainDb;
+
+
+async function runQuery(query, params = []) {
+  if (!mainDb) {
+    throw new Error("Database not initialized");
+  }
+  let retries = 25;
+  while (retries > 0) {
+    try {
+      return await mainDb.run(query, params);
+    } catch (error) {
+      if (error.code === "SQLITE_BUSY" && retries > 1) {
+        retries--;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } else {
+        throw error;
+      }
+    }
+  }
+}
+
+
+(async function initDatabase() {
+  mainDb = await open({
+    filename: MAIN_DB_PATH,
+    driver: sqlite3.Database,
+  });
+  
+  // Enable WAL mode for better concurrency
+  await mainDb.run("PRAGMA journal_mode = WAL;");
+
+  // Increase the busy timeout
+  await mainDb.run("PRAGMA busy_timeout = 5000;");
+
+
+  // Create each table and update the progress bar
+  await mainDb.run(`
+  CREATE TABLE IF NOT EXISTS items (
+    id INTEGER PRIMARY KEY,
+    title TEXT,
+    type TEXT,
+    publish_at TEXT,
+    retrieved_at TEXT,
+    assignedTo TEXT,
+    completed INTEGER,
+    reviewed INTEGER,
+    points INTEGER
+  )
+`);
+
+  await mainDb.run(`
+  CREATE TABLE IF NOT EXISTS content (
+    id INTEGER PRIMARY KEY,
+    message TEXT
+  )
+`);
+
+  await mainDb.run(`
+  CREATE TABLE IF NOT EXISTS locations (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    description TEXT,
+    latitude REAL,
+    longitude REAL,
+    timestamp TEXT
+  )
+`);
+
+  await mainDb.run(`
+  CREATE TABLE IF NOT EXISTS jotihunt_api_response_times (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT,
+    response_time_ms REAL
+  )
+`);
+
+  await mainDb.run(`
+  CREATE TABLE IF NOT EXISTS our_api_response_times (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    endpoint TEXT,
+    timestamp TEXT,
+    response_time_ms REAL
+  )
+`);
+
+  await mainDb.run(`
+  CREATE TABLE IF NOT EXISTS plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER,
+    item_title TEXT,
+    plan_content TEXT,
+    created_at TEXT,
+    FOREIGN KEY (item_id) REFERENCES items (id)
+  )
+`);
+
+  await mainDb.run(`
+  CREATE TABLE IF NOT EXISTS current_area_statuses (
+    name TEXT PRIMARY KEY,
+    status TEXT,
+    last_updated TEXT
+  )
+`);
+
+  await mainDb.run(`
+  CREATE TABLE IF NOT EXISTS area_status_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    area_id TEXT,
+    status TEXT,
+    timestamp TEXT
+  )
+`);
+})();
+
 async function runMaster() {
   console.log("Starting master process...");
   
   try {
     await checkBackupSettings();
-    
+    // await initDatabase();
     // Fork workers
     for (let i = 0; i < numCPUs; i++) {
       await new Promise(resolve => {
@@ -115,105 +232,7 @@ async function runWorker() {
   app.use(bodyParser.json());
   app.use(cokieParser());
 
-  let mainDb;
-  async function initDatabase() {
-    // Start a progress bar with options
-
-    // Function to simulate table creation with progress bar update
-    async function createTable(query) {
-      await runQuery(query); // Execute the query
-    }
-
-    // Open the database
-    mainDb = await open({
-      filename: MAIN_DB_PATH,
-      driver: sqlite3.Database,
-    });
-
-    // Enable WAL mode for better concurrency
-    await mainDb.run("PRAGMA journal_mode = WAL;");
-
-    // Increase the busy timeout
-    await mainDb.run("PRAGMA busy_timeout = 5000;");
-
-    // Create each table and update the progress bar
-    await createTable(`
-    CREATE TABLE IF NOT EXISTS items (
-      id INTEGER PRIMARY KEY,
-      title TEXT,
-      type TEXT,
-      publish_at TEXT,
-      retrieved_at TEXT,
-      assignedTo TEXT,
-      completed INTEGER,
-      reviewed INTEGER,
-      points INTEGER
-    )
-  `);
-
-    await createTable(`
-    CREATE TABLE IF NOT EXISTS content (
-      id INTEGER PRIMARY KEY,
-      message TEXT
-    )
-  `);
-
-    await createTable(`
-    CREATE TABLE IF NOT EXISTS locations (
-      id TEXT PRIMARY KEY,
-      name TEXT,
-      description TEXT,
-      latitude REAL,
-      longitude REAL,
-      timestamp TEXT
-    )
-  `);
-
-    await createTable(`
-    CREATE TABLE IF NOT EXISTS jotihunt_api_response_times (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp TEXT,
-      response_time_ms REAL
-    )
-  `);
-
-    await createTable(`
-    CREATE TABLE IF NOT EXISTS our_api_response_times (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      endpoint TEXT,
-      timestamp TEXT,
-      response_time_ms REAL
-    )
-  `);
-
-    await createTable(`
-    CREATE TABLE IF NOT EXISTS plans (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      item_id INTEGER,
-      item_title TEXT,
-      plan_content TEXT,
-      created_at TEXT,
-      FOREIGN KEY (item_id) REFERENCES items (id)
-    )
-  `);
-
-    await createTable(`
-    CREATE TABLE IF NOT EXISTS current_area_statuses (
-      name TEXT PRIMARY KEY,
-      status TEXT,
-      last_updated TEXT
-    )
-  `);
-
-    await createTable(`
-    CREATE TABLE IF NOT EXISTS area_status_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      area_id TEXT,
-      status TEXT,
-      timestamp TEXT
-    )
-  `);
-  }
+  
 
   // Fetch data from Jotihunt API
   async function fetchJotihuntData() {
@@ -236,21 +255,6 @@ async function runWorker() {
     }
   }
 
-  async function runQuery(query, params = []) {
-    let retries = 25;
-    while (retries > 0) {
-      try {
-        return await mainDb.run(query, params);
-      } catch (error) {
-        if (error.code === "SQLITE_BUSY" && retries > 1) {
-          retries--;
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second before retrying
-        } else {
-          throw error;
-        }
-      }
-    }
-  }
 
   // Add this new function to fetch and update area statuses
   async function updateAreaStatuses() {
@@ -1289,10 +1293,13 @@ async function runWorker() {
 
   // Initialize databases and start server
   async function startServer() {
-    await checkBackupSettings();
+
+    while (!mainDb) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
     // Initialize databases and start server
-    await initDatabase();
+  
 
     // Hide cursor
     await term("\x1B[?25l");
