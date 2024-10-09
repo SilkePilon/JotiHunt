@@ -200,14 +200,16 @@ export function PresetSave() {
   }, [updateLocation]);
 
   useEffect(() => {
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    const intervalId = setInterval(updateLocation, 10000); // Update every second
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [updateLocation, handleVisibilityChange]);
+  const intervalId = setInterval(updateLocation, 300000); // Update every 5 minutes (300000 ms)
+  
+  return () => {
+    clearInterval(intervalId);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+  };
+}, [updateLocation, handleVisibilityChange]);
+
 
   if (isDesktop) {
     return (

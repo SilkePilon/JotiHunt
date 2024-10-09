@@ -161,28 +161,6 @@ const Map = () => {
     }
   }, []);
 
-  const handleNameSubmit = (e) => {
-    e.preventDefault();
-    if (userName && userLocation) {
-      fetch("https://localhost:5000/api/save-location", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: userName,
-          latitude: userLocation[0],
-          longitude: userLocation[1],
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data);
-          setIsUserNameSubmitted(true);
-        })
-        .catch((error) => console.error("Error saving location:", error));
-    }
-  };
 
   const getRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);

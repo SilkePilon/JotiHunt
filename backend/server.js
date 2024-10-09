@@ -9,12 +9,14 @@ const SqliteToJson = require("sqlite-to-json");
 const { stringify } = require("querystring");
 const { OpenAI } = require("openai");
 const cheerio = require("cheerio");
+const { performance } = require('perf_hooks');
 const stringSimilarity = require("string-similarity");
 const cluster = require("cluster");
 const os = require("os");
 const util = require("util");
 const term = require("terminal-kit").terminal;
 const getPixels = require("get-pixels");
+const cokieParser = require("cookie-parser");
 // backup manager
 const { checkBackupSettings } = require("./backupUtils");
 const { url } = require("inspector");
@@ -59,8 +61,40 @@ if (cluster.isMaster) {
   const PORT = process.env.PORT || 5000;
   const DELAY = process.env.DELAY || 60000;
 
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    : [];
+  
+  function isOriginAllowed(origin) {
+    if (!origin) return false;
+    return allowedOrigins.some(allowedOrigin => {
+      // Convert to URL objects for easier comparison
+      const allowedUrl = new URL(allowedOrigin);
+      const originUrl = new URL(origin);
+      
+      // Check if domains match (including subdomains)
+      return originUrl.hostname.endsWith(allowedUrl.hostname);
+    });
+  }
+
+  // Configure CORS
+  const corsOptions = {
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  };
+
+  app.use(cors(corsOptions));
   app.use(bodyParser.json());
-  app.use(cors());
+  app.use(cokieParser());
 
   let mainDb;
   async function initDatabase() {
@@ -244,21 +278,30 @@ if (cluster.isMaster) {
 
   // Middleware to measure API response time
   function measureResponseTime(req, res, next) {
-    const startTime = performance.now();
+    // Check if the request origin is allowed
+    const origin = req.get('Origin');
+    const isAllowedOrigin = isOriginAllowed(origin);
 
-    res.on("finish", async () => {
-      const endTime = performance.now();
-      const responseTimeMs = endTime - startTime;
+    if (!isAllowedOrigin) {
+      // If the CF_Session cookie is not present or the origin is not allowed, send an error response
+      return res.status(401).json({ error: 'Authentication required or origin not allowed' });
+    }
 
-      try {
-        await runQuery(
-          `INSERT INTO our_api_response_times (endpoint, timestamp, response_time_ms) VALUES (?, ?, ?)`,
-          [req.path, new Date().toISOString(), responseTimeMs]
-        );
-      } catch (error) {
-        console.error("Error recording API response time:", error);
-      }
-    });
+    // const startTime = performance.now();
+
+    // res.on("finish", async () => {
+    //   const endTime = performance.now();
+    //   const responseTimeMs = endTime - startTime;
+
+    //   try {
+    //     await runQuery(
+    //       `INSERT INTO our_api_response_times (endpoint, timestamp, response_time_ms) VALUES (?, ?, ?)`,
+    //       [req.path, new Date().toISOString(), responseTimeMs]
+    //     );
+    //   } catch (error) {
+    //     console.error("Error recording API response time:", error);
+    //   }
+    // });
 
     next();
   }
