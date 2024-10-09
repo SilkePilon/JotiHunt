@@ -69,8 +69,8 @@ import { FaMapMarkedAlt } from "react-icons/fa";
 import { MdPhotoCamera } from "react-icons/md";
 import { SiGooglemaps } from "react-icons/si";
 
-const Map = ({ initialPosition }) => {
-  const [users, setUsers] = useState([]);
+const Map = () => {
+  const [groups, setGroups] = useState([]);
   const [jotihuntGroups, setJotihuntGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
@@ -83,6 +83,7 @@ const Map = ({ initialPosition }) => {
   const [foxLocationDeleted, setfoxLocationDeleted] = useState(false);
   const centerOfNetherlands = [52.2858356, 5.6549385899207];
   const [searchQuery, setSearchQuery] = useState("");
+  const [users, setUsers] = useState<any[]>([]);
   const [searchResult, setSearchResult] = useState(null);
   const [map, setMap] = useState<Map | null>(null);
   const { toast } = useToast();
@@ -411,8 +412,9 @@ const Map = ({ initialPosition }) => {
         <MapContainer
           center={centerOfNetherlands}
           zoom={10}
+          zoomControl={true}
           ref={setMap}
-          style={{ height: "80vh", width: "100%", borderRadius: "0.75rem" }}
+          style={{ height: "100vh", width: "100%" }}
         >
           <LayersControl position="topright">
             <LayersControl.BaseLayer checked name="OpenStreetMap">
@@ -764,10 +766,10 @@ const Map = ({ initialPosition }) => {
           ))}
         </MapContainer>
         <div
-          className="absolute left-1/2 transform -translate-x-1/2 z-[1] flex flex-col items-center space-y-2"
-          style={{ marginTop: "-78vh" }}
+          className="absolute grid items-center w-fit"
+          style={{ top: 0, left: "500px", zIndex: 20, marginTop: "5rem" }}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex w-full items-center space-x-2">
             <Input
               style={{ width: "30vw" }}
               placeholder="location name or lat/long..."

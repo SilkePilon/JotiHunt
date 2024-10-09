@@ -98,7 +98,7 @@ const NewsCard = ({ article, onUpdateArticle }) => {
         </CardFooter>
       </Card>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {/* <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{article.title}</DialogTitle>
@@ -169,7 +169,7 @@ const NewsCard = ({ article, onUpdateArticle }) => {
             <Button onClick={handleSave}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </>
   );
 };
@@ -182,6 +182,7 @@ const NewsCardList = () => {
   }, []);
 
   const fetchNews = async () => {
+
     const response = await fetch("https://api.jotiboard.nl/api/news");
     const data = await response.json();
     setNews(sortNews(data));
@@ -201,6 +202,7 @@ const NewsCardList = () => {
   const handleUpdateArticle = async (updatedArticle) => {
     try {
       const response = await fetch(
+
         `https://api.jotiboard.nl/api/news/${updatedArticle.id}`,
         {
           method: "PUT",
