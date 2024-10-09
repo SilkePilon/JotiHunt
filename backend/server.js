@@ -64,19 +64,10 @@ if (cluster.isMaster) {
   let mainDb;
   async function initDatabase() {
     // Start a progress bar with options
-    const progressBar = await term.progressBar({
-      width: 80,
-      title: "Initializing Database:",
-      eta: false,
-      percent: true,
-      items: 8, // Number of tables to be created
-    });
 
     // Function to simulate table creation with progress bar update
     async function createTable(query) {
-      await mainDb.exec(query); // Execute the query
-      await new Promise((r) => setTimeout(r, 20));
-      await progressBar.itemDone(); // Update the progress bar
+      await runQuery(query); // Execute the query
     }
 
     // Open the database
@@ -168,10 +159,6 @@ if (cluster.isMaster) {
       timestamp TEXT
     )
   `);
-
-    await progressBar.stop();
-    await term("\n");
-    await new Promise((r) => setTimeout(r, 200));
   }
 
   // Fetch data from Jotihunt API
@@ -1273,17 +1260,14 @@ if (cluster.isMaster) {
       setInterval(updateDatabase, DELAY); // Fetch every minute
       setInterval(updateAreaStatuses, DELAY); // Update area statuses every minute
 
-      await term.spinner("impulse");
-      await term(" Let the game begin! \n");
+      // await term.drawImage(
+      //   "https://github.com/SilkePilon/JotiHunt/blob/main/assets/dwa.png?raw=true",
+      //   {
+      //     shrink: { width: term.width, height: term.height * 1 },
+      //   }
+      // );
 
-      await term.drawImage(
-        "https://github.com/SilkePilon/JotiHunt/blob/main/assets/dwa.png?raw=true",
-        {
-          shrink: { width: term.width, height: term.height * 1 },
-        }
-      );
-
-      await term("     Yes this is a fox....");
+      // await term("     Yes this is a fox....");
     });
   }
 
