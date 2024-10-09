@@ -182,7 +182,8 @@ const NewsCardList = () => {
   }, []);
 
   const fetchNews = async () => {
-    const response = await fetch("http://localhost:5000/api/data/news");
+
+    const response = await fetch("https://api.jotiboard.nl/api/news");
     const data = await response.json();
     setNews(sortNews(data));
   };
@@ -201,7 +202,8 @@ const NewsCardList = () => {
   const handleUpdateArticle = async (updatedArticle) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/data/news/${updatedArticle.id}`,
+
+        `https://api.jotiboard.nl/api/news/${updatedArticle.id}`,
         {
           method: "PUT",
           headers: {

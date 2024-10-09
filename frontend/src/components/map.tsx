@@ -118,7 +118,7 @@ const Map = () => {
   };
 
   const fetchAllLocations = () => {
-    fetch("http://localhost:5000/api/get-locations")
+    fetch("https://api.jotiboard.nl/api/get-locations")
       .then((response) => response.json())
       .then((data) => {
         setUsers(

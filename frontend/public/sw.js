@@ -35,7 +35,7 @@ async function syncLocation() {
 
               // Send location data to the server
               const response = await fetch(
-                "http://localhost:5000/api/save-location",
+                "https://api.jotiboard.nl/api/save-location",
                 {
                   method: "POST",
                   headers: {

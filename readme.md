@@ -2,7 +2,7 @@
   <br>
   <a href="/"><img style="border-radius:0.9rem" src="assets/bg_3.gif" alt="..." width="100%"></a>
   <br>
-  
+
 </h1>
 <p align="center">- JotiHunt backend is always listening for u.</p>
 
@@ -60,6 +60,137 @@ Additionally, players can submit their current GPS location to the server, and t
 
 ## Installation
 
+### Using Docker (recommended)
+
+> [!WARNING]
+> Docker support is currently a work in progress. Some features will not work as intended.
+
+The following platforms are supported:
+
+- [x] Windows
+- [x] Linux (arm/x86)
+- [x] Raspberry Pi (4/5)
+
+#### 1. Pull and Run the Docker Image
+
+To start the Jotihunt container, run the following command in your terminal:
+
+```bash
+docker run --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+This command does the following:
+
+- `--name jotihunt-container`: Assigns a name to your container for easy reference
+- `--restart=always`: Ensures the container restarts automatically if it crashes or if the Docker daemon restarts
+- `-d`: Runs the container in detached mode (in the background)
+
+#### 2. Viewing Logs
+
+To view the logs of the running container:
+
+```bash
+docker logs jotihunt-container
+```
+
+To follow the logs in real-time:
+
+```bash
+docker logs -f jotihunt-container
+```
+
+#### 3. Stopping the Container
+
+To stop the running container:
+
+```bash
+docker stop jotihunt-container
+```
+
+#### 4. Starting a Stopped Container
+
+To start a stopped container:
+
+```bash
+docker start jotihunt-container
+```
+
+#### 5. Removing the Container
+
+To remove the container (this will delete all data within the container):
+
+```bash
+docker rm jotihunt-container
+```
+
+Add `-f` if the container is running:
+
+```bash
+docker rm -f jotihunt-container
+```
+
+#### 6. Updating the Container
+
+To update to the latest version:
+
+```bash
+docker pull ghcr.io/silkepilon/jotihunt:main
+docker stop jotihunt-container
+docker rm jotihunt-container
+docker run --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+#### 7. Advanced Options
+
+##### Port Mapping
+
+If the application inside the container exposes a port, you can map it to a host port:
+
+```bash
+docker run -p 8080:80 --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+This maps port 80 in the container to port 8080 on your host.
+
+##### Volume Mounting
+
+To persist data outside the container:
+
+```bash
+docker run -v /path/on/host:/path/in/container --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+Replace `/path/on/host` and `/path/in/container` with appropriate paths.
+
+##### Environment Variables
+
+To pass environment variables:
+
+```bash
+docker run -e VAR_NAME=value --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+##### Resource Limits
+
+To limit CPU and memory usage:
+
+```bash
+docker run --cpus=2 --memory=2g --name jotihunt-container --restart=always -d ghcr.io/silkepilon/jotihunt:main
+```
+
+This limits the container to 2 CPUs and 2GB of RAM.
+
+#### 8. Troubleshooting
+
+If you encounter issues:
+
+1. Check the logs: `docker logs jotihunt-container`
+2. Ensure you have the latest image: `docker pull ghcr.io/silkepilon/jotihunt:main`
+3. Try removing and recreating the container
+4. Verify your Docker installation is up-to-date
+
+### Manual Installation (dev)
+
 1. Clone the repository:
 
    ```bash
@@ -81,9 +212,13 @@ Additionally, players can submit their current GPS location to the server, and t
    # the port the server will run on
    PORT=5000
    # OPTIONAL: a key to access the NVIDIA API to generate AI plans to solve hints or assignments
-   NVIDIA_API_KEY=nvapi-************
+   NVIDIA_API_KEY=
    # the delay in milliseconds between API calls to the official jotihunt api.
    DELAY=60000
+   # enables automatic backups of the database to a user specified location
+   ENABLE_BACKUPS=true
+   # the backup interval in minutes (default 60) only used when ENABLE_BACKUPS is true
+   BACKUP_INTERVAL=60
    ```
 
 4. Run the server:
