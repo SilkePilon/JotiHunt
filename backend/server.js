@@ -21,6 +21,8 @@ const { url } = require("inspector");
 
 require("dotenv").config();
 const numCPUs = os.cpus().length;
+const MAIN_DB_PATH = path.join(__dirname, "main.db");
+
 console.clear();
 if (cluster.isMaster) {
   console.clear();
@@ -59,8 +61,6 @@ if (cluster.isMaster) {
   app.use(bodyParser.json());
   app.use(cors());
 
-  const MAIN_DB_PATH = path.join(__dirname, "main.db");
-
   let mainDb;
   async function initDatabase() {
     // Start a progress bar with options
@@ -84,6 +84,12 @@ if (cluster.isMaster) {
       filename: MAIN_DB_PATH,
       driver: sqlite3.Database,
     });
+
+    // Enable WAL mode for better concurrency
+    await mainDb.run("PRAGMA journal_mode = WAL;");
+
+    // Increase the busy timeout
+    await mainDb.run("PRAGMA busy_timeout = 5000;");
 
     // Create each table and update the progress bar
     await createTable(`
@@ -177,7 +183,7 @@ if (cluster.isMaster) {
       const responseTimeMs = endTime - startTime;
 
       // Record the response time in milliseconds
-      await mainDb.run(
+      await runQuery(
         `INSERT INTO jotihunt_api_response_times (timestamp, response_time_ms) VALUES (?, ?)`,
         [new Date().toISOString(), responseTimeMs]
       );
@@ -186,6 +192,22 @@ if (cluster.isMaster) {
     } catch (error) {
       console.error("Error fetching Jotihunt data:", error);
       return [];
+    }
+  }
+
+  async function runQuery(query, params = []) {
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        return await mainDb.run(query, params);
+      } catch (error) {
+        if (error.code === "SQLITE_BUSY" && retries > 1) {
+          retries--;
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second before retrying
+        } else {
+          throw error;
+        }
+      }
     }
   }
 
@@ -203,7 +225,7 @@ if (cluster.isMaster) {
         );
 
         // Update current_area_statuses
-        const result = await mainDb.run(
+        const result = await runQuery(
           `
         INSERT OR REPLACE INTO current_area_statuses (name, status, last_updated)
         VALUES (?, ?, ?)
@@ -213,7 +235,7 @@ if (cluster.isMaster) {
 
         // If status has changed, add to area_status_history
         if (!currentStatus || currentStatus.status !== area.status) {
-          const historyResult = await mainDb.run(
+          const historyResult = await runQuery(
             `
           INSERT INTO area_status_history (area_id, status, timestamp)
           VALUES (?, ?, ?)
@@ -241,7 +263,7 @@ if (cluster.isMaster) {
       const responseTimeMs = endTime - startTime;
 
       try {
-        await mainDb.run(
+        await runQuery(
           `INSERT INTO our_api_response_times (endpoint, timestamp, response_time_ms) VALUES (?, ?, ?)`,
           [req.path, new Date().toISOString(), responseTimeMs]
         );
@@ -288,7 +310,7 @@ if (cluster.isMaster) {
       };
 
       // Insert or update item in main database
-      await mainDb.run(
+      await runQuery(
         `
       INSERT OR REPLACE INTO items 
       (id, title, type, publish_at, retrieved_at, assignedTo, completed, reviewed, points) 
@@ -308,7 +330,7 @@ if (cluster.isMaster) {
       );
 
       // Store message content in content table
-      await mainDb.run(
+      await runQuery(
         "INSERT OR REPLACE INTO content (id, message) VALUES (?, ?)",
         [item.id, JSON.stringify(item.message)]
       );
@@ -394,7 +416,7 @@ if (cluster.isMaster) {
 
       // Save plan to database
       const timestamp = new Date().toISOString();
-      await mainDb.run(
+      await runQuery(
         "INSERT INTO plans (item_id, item_title, plan_content, created_at) VALUES (?, ?, ?, ?)",
         [id, item.title, plan, timestamp]
       );
@@ -781,7 +803,7 @@ if (cluster.isMaster) {
 
       if (!currentLocation) {
         // If the location doesn't exist, insert a new one
-        await mainDb.run(
+        await runQuery(
           `
         INSERT INTO locations (id, name, description, latitude, longitude, timestamp)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -804,7 +826,7 @@ if (cluster.isMaster) {
         longitude !== "" ? longitude : currentLocation.longitude;
 
       // Update the existing location
-      await mainDb.run(
+      await runQuery(
         `
       UPDATE locations
       SET name = ?, description = ?, latitude = ?, longitude = ?, timestamp = ?
@@ -1088,7 +1110,7 @@ if (cluster.isMaster) {
       try {
         // Revert changes made to the item
         if (originalItem) {
-          await mainDb.run(
+          await runQuery(
             `
           UPDATE items
           SET assignedTo = ?, points = ?, reviewed = ?, completed = ?
@@ -1106,7 +1128,7 @@ if (cluster.isMaster) {
 
         // Delete the test location
         if (createdLocationId) {
-          await mainDb.run(
+          await runQuery(
             "DELETE FROM locations WHERE id = ?",
             createdLocationId
           );
@@ -1205,7 +1227,7 @@ if (cluster.isMaster) {
       }
 
       // Update the item
-      await mainDb.run(
+      await runQuery(
         `
       UPDATE items
       SET assignedTo = ?, points = ?, reviewed = ?, completed = ?
@@ -1266,8 +1288,10 @@ if (cluster.isMaster) {
   }
 
   process.on("SIGINT", async () => {
-    await term("\x1B[?25h"); // Show cursor
-    await term.red("\nGracefully shutting down...\n");
+    console.log(`Worker ${process.pid} is shutting down...`);
+    if (mainDb) {
+      await mainDb.close();
+    }
     process.exit();
   });
 
