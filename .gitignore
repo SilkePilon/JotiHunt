@@ -3,3 +3,5 @@ node_modules/
 backend/main.db
 backend/.env
 backend/package-lock.json
+backend/main.db-shm
+backend/main.db-wal
