@@ -9,7 +9,7 @@ const SqliteToJson = require("sqlite-to-json");
 const { stringify } = require("querystring");
 const { OpenAI } = require("openai");
 const cheerio = require("cheerio");
-const { performance } = require('perf_hooks');
+const { performance } = require("perf_hooks");
 const stringSimilarity = require("string-similarity");
 const cluster = require("cluster");
 const os = require("os");
@@ -27,9 +27,7 @@ const MAIN_DB_PATH = path.join(__dirname, "main.db");
 
 console.clear();
 
-
 let mainDb;
-
 
 async function runQuery(query, params = []) {
   if (!mainDb) {
@@ -50,19 +48,17 @@ async function runQuery(query, params = []) {
   }
 }
 
-
 (async function initDatabase() {
   mainDb = await open({
     filename: MAIN_DB_PATH,
     driver: sqlite3.Database,
   });
-  
+
   // Enable WAL mode for better concurrency
   await mainDb.run("PRAGMA journal_mode = WAL;");
 
   // Increase the busy timeout
   await mainDb.run("PRAGMA busy_timeout = 5000;");
-
 
   // Create each table and update the progress bar
   await mainDb.run(`
@@ -143,17 +139,40 @@ async function runQuery(query, params = []) {
 `);
 })();
 
+async function selectCores() {
+  const menuItems = [
+    "Use all cores (default)",
+    ...Array.from(
+      { length: numCPUs },
+      (_, i) => `Use ${i + 1} core${i === 0 ? "" : "s"}`
+    ),
+  ];
+
+  return new Promise((resolve) => {
+    term.singleColumnMenu(menuItems, (error, response) => {
+      if (error) throw error;
+      const selectedCores =
+        response.selectedIndex === 0 ? numCPUs : response.selectedIndex;
+      resolve(selectedCores);
+    });
+  });
+}
+
 async function runMaster() {
   console.log("Starting master process...");
-  
+
   try {
+    const selectedCores = await selectCores();
+    console.log(`Using ${selectedCores} core${selectedCores === 1 ? "" : "s"}`);
+
     await checkBackupSettings();
     // await initDatabase();
+
     // Fork workers
-    for (let i = 0; i < numCPUs; i++) {
-      await new Promise(resolve => {
+    for (let i = 0; i < selectedCores; i++) {
+      await new Promise((resolve) => {
         const worker = cluster.fork();
-        worker.on('online', () => {
+        worker.on("online", () => {
           term(`Creating new worker, ${i}\n`);
           resolve();
         });
@@ -163,9 +182,9 @@ async function runMaster() {
     cluster.on("exit", async (worker, code, signal) => {
       console.log(`Worker ${worker.process.pid} died`);
       // Replace the dead worker
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         const newWorker = cluster.fork();
-        newWorker.on('online', () => {
+        newWorker.on("online", () => {
           console.log(`New worker ${newWorker.process.pid} started`);
           resolve();
         });
@@ -176,6 +195,7 @@ async function runMaster() {
     process.exit(1);
   }
 }
+
 async function runWorker() {
   let openai;
 
@@ -198,16 +218,16 @@ async function runWorker() {
   const DELAY = process.env.DELAY || 60000;
 
   const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
     : [];
-  
+
   function isOriginAllowed(origin) {
     if (!origin) return false;
-    return allowedOrigins.some(allowedOrigin => {
+    return allowedOrigins.some((allowedOrigin) => {
       // Convert to URL objects for easier comparison
       const allowedUrl = new URL(allowedOrigin);
       const originUrl = new URL(origin);
-      
+
       // Check if domains match (including subdomains)
       return originUrl.hostname.endsWith(allowedUrl.hostname);
     });
@@ -221,18 +241,16 @@ async function runWorker() {
       if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error("Not allowed by CORS"));
       }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   };
 
   app.use(cors(corsOptions));
   app.use(bodyParser.json());
   app.use(cokieParser());
-
-  
 
   // Fetch data from Jotihunt API
   async function fetchJotihuntData() {
@@ -254,7 +272,6 @@ async function runWorker() {
       return [];
     }
   }
-
 
   // Add this new function to fetch and update area statuses
   async function updateAreaStatuses() {
@@ -302,11 +319,13 @@ async function runWorker() {
   // Middleware to measure API response time
   function measureResponseTime(req, res, next) {
     // Check if the request origin is allowed
-    const origin = req.get('Origin');
+    const origin = req.get("Origin");
     const isAllowedOrigin = isOriginAllowed(origin);
 
     if (!isAllowedOrigin) {
-      return res.status(401).json({ error: 'Authentication required or origin not allowed' });
+      return res
+        .status(401)
+        .json({ error: "Authentication required or origin not allowed" });
     }
 
     next();
@@ -1293,13 +1312,11 @@ async function runWorker() {
 
   // Initialize databases and start server
   async function startServer() {
-
     while (!mainDb) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     // Initialize databases and start server
-  
 
     // Hide cursor
     await term("\x1B[?25l");
