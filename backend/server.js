@@ -6,20 +6,17 @@ const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
 const { open } = require("sqlite");
 const SqliteToJson = require("sqlite-to-json");
-const { stringify } = require("querystring");
 const { OpenAI } = require("openai");
 const cheerio = require("cheerio");
 const { performance } = require("perf_hooks");
+const { promisify } = require("util");
 const stringSimilarity = require("string-similarity");
 const cluster = require("cluster");
 const os = require("os");
-const util = require("util");
 const term = require("terminal-kit").terminal;
-const getPixels = require("get-pixels");
 const cokieParser = require("cookie-parser");
-// backup manager
+const fs = require("fs").promises;
 const { checkBackupSettings } = require("./backupUtils");
-const { url } = require("inspector");
 
 require("dotenv").config();
 const numCPUs = os.cpus().length;
@@ -140,45 +137,111 @@ async function runQuery(query, params = []) {
 })();
 
 async function selectCores() {
-  const menuItems = [
+  const items = [
     "Use all cores (default)",
-    ...Array.from(
-      { length: numCPUs },
-      (_, i) => `Use ${i + 1} core${i === 0 ? "" : "s"}`
-    ),
+    "Select number of cores",
+    "Use single core",
   ];
 
-  return new Promise((resolve) => {
-    term.singleColumnMenu(menuItems, (error, response) => {
-      if (error) throw error;
-      const selectedCores =
-        response.selectedIndex === 0 ? numCPUs : response.selectedIndex;
-      resolve(selectedCores);
-    });
-  });
+  const menuOptions = {
+    selectedStyle: term.bgGray,
+    cancelable: true,
+    exitOnUnexpectedKey: false,
+  };
+
+  try {
+    const response = await term.singleColumnMenu(items, menuOptions).promise;
+    await term.clear(); // Clear the screen after selection
+
+    let selectedCores;
+
+    if (response.selectedIndex === 0) {
+      selectedCores = numCPUs;
+    } else if (response.selectedIndex === 1) {
+      const input = await term.inputField({
+        prompt: `Enter number of cores (1-${numCPUs}): `,
+        cancelable: true,
+        keyBindings: { CTRL_C: "cancel" },
+      }).promise;
+      await term.clear(); // Clear the screen after input
+      const parsedInput = parseInt(input);
+      if (isNaN(parsedInput) || parsedInput < 1 || parsedInput > numCPUs) {
+        await term.red(
+          `Invalid input. Please enter a number between 1 and ${numCPUs}.\n`
+        );
+        return selectCores();
+      }
+      selectedCores = parsedInput;
+    } else if (response.selectedIndex === 2) {
+      selectedCores = 1;
+    }
+
+    await updateEnvFile("NUM_CORES", selectedCores.toString());
+    return selectedCores;
+  } catch (error) {
+    if (error.message === "Canceled") {
+      await term.yellow("\nOperation canceled.\n");
+      await term.processExit(0);
+    } else {
+      throw error;
+    }
+  }
 }
+
+async function updateEnvFile(key, value) {
+  const envPath = path.join(__dirname, ".env");
+  let envContent = await fs.readFile(envPath, "utf8").catch(() => "");
+
+  const regex = new RegExp(`^${key}=.*$`, "m");
+  const newLine = `${key}=${value}`;
+
+  if (regex.test(envContent)) {
+    envContent = envContent.replace(regex, newLine);
+  } else {
+    envContent += `\n${newLine}`;
+  }
+
+  await fs.writeFile(envPath, envContent.trim() + "\n");
+  await term.green(`Updated .env file with ${key}=${value}\n`);
+}
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function runMaster() {
   console.log("Starting master process...");
 
   try {
-    const selectedCores = await selectCores();
+    const selectedCores = await selectCores(); // Assume this is a predefined function
     console.log(`Using ${selectedCores} core${selectedCores === 1 ? "" : "s"}`);
 
-    await checkBackupSettings();
-    // await initDatabase();
+    await checkBackupSettings(); // Assume this is a predefined function
+    // await initDatabase(); // If you need to initialize a database, uncomment this.
 
-    // Fork workers
+    // Create a progress bar
+    const progressBar = term.progressBar({
+      width: 80,
+      title: "Creating workers:",
+      eta: true,
+      percent: true,
+      items: selectedCores,
+    });
+
+    // Fork workers with a delay between creation
     for (let i = 0; i < selectedCores; i++) {
       await new Promise((resolve) => {
         const worker = cluster.fork();
         worker.on("online", () => {
-          term(`Creating new worker, ${i}\n`);
+          progressBar.update((i + 1) / selectedCores); // Update based on the completed fraction
           resolve();
         });
       });
+
+      await delay(500); // Delay for 1 second between creating workers
     }
 
+    progressBar.stop(); // Stop the progress bar after all workers are created
+    term("\n"); // Move to the next line after the progress bar
+
+    // Handle worker exit and replacement
     cluster.on("exit", async (worker, code, signal) => {
       console.log(`Worker ${worker.process.pid} died`);
       // Replace the dead worker
@@ -190,11 +253,24 @@ async function runMaster() {
         });
       });
     });
+
+    term(`Server is running on http://localhost:${process.env.PORT}`);
   } catch (error) {
     console.error("Error in master process:", error);
     process.exit(1);
   }
 }
+
+function exitHandler() {
+  term.yellow("\nOperation canceled.\n");
+  term.processExit(0);
+}
+
+term.on("key", (name, matches, data) => {
+  if (name === "CTRL_C") {
+    exitHandler();
+  }
+});
 
 async function runWorker() {
   let openai;
@@ -1322,7 +1398,6 @@ async function runWorker() {
     await term("\x1B[?25l");
 
     app.listen(PORT, "0.0.0.0", async () => {
-      term(`\nServer is running on http://localhost:${PORT}\n\n\n`);
       updateDatabase(); // Initial data fetch
       updateAreaStatuses(); // Initial area status fetch
 
