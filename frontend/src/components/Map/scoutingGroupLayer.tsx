@@ -19,7 +19,6 @@ import MarkerPinDelta from "../images/pins/marker-pin-delta.svg";
 import MarkerPinEcho from "../images/pins/marker-pin-echo.svg";
 import MarkerPinFoxtrot from "../images/pins/marker-pin-foxtrot.svg";
 
-import { L, Map } from "leaflet";
 import { icon } from "leaflet";
 
 type Deelgebied = "alpha" | "bravo" | "charlie" | "delta" | "echo" | "foxtrot";
@@ -74,7 +73,6 @@ export default function ScoutingGroupsPositions({
 }: {
   jotihuntGroups: any[];
 }) {
-  console.log(jotihuntGroups);
   return (
     <>
       {jotihuntGroups.map((group, index) => (
