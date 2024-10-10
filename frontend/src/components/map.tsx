@@ -68,6 +68,7 @@ import { FaLocationDot } from "react-icons/fa6";
 import { FaMapMarkedAlt } from "react-icons/fa";
 import { MdPhotoCamera } from "react-icons/md";
 import { SiGooglemaps } from "react-icons/si";
+import ScoutingGroupsPositions from "./Map/scoutingGroupLayer";
 
 const Map = () => {
   const [groups, setGroups] = useState([]);
@@ -182,14 +183,6 @@ const Map = () => {
         })
         .catch((error) => console.error("Error saving location:", error));
     }
-  };
-
-  const getRandomColor = () => {
-    const hue = Math.floor(Math.random() * 360);
-    const saturation = Math.floor(Math.random() * 21) + 80; // 80-100%
-    const lightness = Math.floor(Math.random() * 11) + 45; // 45-55%
-
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   };
 
   const formatDate = (isoString) => {
@@ -633,137 +626,7 @@ const Map = () => {
             </React.Fragment>
           ))}
 
-          {jotihuntGroups.map((group, index) => (
-            <React.Fragment key={index}>
-              <Circle
-                center={[parseFloat(group.lat), parseFloat(group.long)]}
-                radius={1000}
-                pathOptions={{ fillColor: getRandomColor(), color: "black" }}
-              >
-                <Popup className="request-popup" minWidth={280} maxWidth={280}>
-                  <Card className="w-full h-full shadow-none">
-                    <CardHeader className="p-4 pb-0">
-                      <CardTitle>{group.name}</CardTitle>
-
-                      <CardDescription>
-                        <div className="space-y-2">
-                          {group.accomodation} -{" "}
-                          <a
-                            target="_blank"
-                            className="underline"
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${
-                              group.street
-                            }+${group.housenumber}${
-                              group.housenumber_addition
-                                ? group.housenumber_addition
-                                : ""
-                            }+${group.city}&travelmode=driving`}
-                          >
-                            {group.street} {group.housenumber}
-                            {group.housenumber_addition} {group.city}
-                          </a>
-                          <ul className="space-y-2">
-                            <li className="flex items-center">
-                              <FaLocationDot className="mr-2" />
-                              <span>
-                                {group.lat}, {group.long}
-                              </span>
-                            </li>
-                            {group.area && (
-                              <li className="flex items-center">
-                                <FaMapMarkedAlt className="mr-2" />
-                                <span>{group.area}</span>
-                              </li>
-                            )}
-                            {/* <li className="flex items-center">
-                              <MdPhotoCamera className="mr-2" />
-                              <span>
-                                {group.photo_assignment_points ? 0 : 0} photo
-                                assignment points
-                              </span>
-                            </li> */}
-                          </ul>
-                        </div>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent
-                      style={{ marginTop: "10px" }}
-                      className="flex flex-row items-baseline gap-4 p-4 pt-2"
-                    >
-                      <Button className="w-full">
-                        <a
-                          style={{ color: "inherit" }}
-                          target="_blank"
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${
-                            group.street
-                          }+${group.housenumber}${
-                            group.housenumber_addition
-                              ? group.housenumber_addition
-                              : ""
-                          }+${group.city}&travelmode=driving`}
-                        >
-                          <div className="flex items-center">
-                            <SiGooglemaps className="mr-2" />
-                            <span>Get directions</span>
-                          </div>
-                        </a>
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          map && map.closePopup();
-                        }}
-                        className="w-full"
-                        style={{ backgroundColor: "#ff6961" }}
-                      >
-                        Close
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Popup>
-              </Circle>
-              <Circle
-                center={[parseFloat(group.lat), parseFloat(group.long)]}
-                radius={499}
-                pathOptions={{ fillColor: getRandomColor(), color: "black" }}
-              >
-                <Popup className="request-popup" minWidth={280} maxWidth={280}>
-                  <Card className="w-full h-full shadow-none">
-                    <CardHeader className="p-4 pb-0">
-                      <CardTitle>{group.name}</CardTitle>
-                      <CardDescription>
-                        <div className="space-y-2">
-                          Inside this area you can place your counter hunt!
-                          <ul
-                            style={{ paddingTop: "10px" }}
-                            className="space-y-2"
-                          >
-                            <li className="flex items-center">
-                              <FaLocationDot className="mr-2" />
-                              <span>Within 50 meters</span>
-                            </li>
-                          </ul>
-                        </div>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent
-                      style={{ marginTop: "10px" }}
-                      className="flex flex-row items-baseline gap-4 p-4 pt-2"
-                    >
-                      <Button
-                        onClick={() => {
-                          map && map.closePopup();
-                        }}
-                        className="w-full"
-                        style={{ backgroundColor: "#ff6961" }}
-                      >
-                        Close
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Popup>
-              </Circle>
-            </React.Fragment>
-          ))}
+          <ScoutingGroupsPositions jotihuntGroups={jotihuntGroups} />
         </MapContainer>
         <div
           className="absolute grid items-center w-fit"
